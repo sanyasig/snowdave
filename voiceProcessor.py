@@ -7,14 +7,12 @@ from speech import Speech
 from wit import Wit
 from processQuestion import ProcesQuestion
 class VoiceProcessor:
-    WOLFRAM_ALPHA_KEY = "QQG9XK-5HQA4Q3257"
 
     def __init__(self):
         self.recigniser = sr.Recognizer()
         self.mic = sr.Microphone()
         self.say = Speech()
         self.analizeQuestion = ProcesQuestion()
-        self.wolfram_client = wolframalpha.Client(self.WOLFRAM_ALPHA_KEY)
         with self.mic as source:
             self.recigniser.adjust_for_ambient_noise(source)
 
@@ -40,8 +38,8 @@ class VoiceProcessor:
 
 
     def askQuestion(self, question):
-        self.analizeQuestion.analiseQuestion(question)
-        #res = self.wolfram_client.query(question)
+        response = self.analizeQuestion.analiseQuestion(question)
+
         # if len(res.pods) > 0:
         #     pod = res.pods[1]
         #     if pod.text:
