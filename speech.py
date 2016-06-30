@@ -39,4 +39,6 @@ class Speech:
         audioStream = AudioSegment.from_mp3(audio_file)
         play(audioStream)
 
-
+    def play_ding(self):
+        audioStream = AudioSegment.from_wav("resources/ding.wav")
+        play(audioStream)

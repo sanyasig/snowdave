@@ -19,6 +19,7 @@ class VoiceProcessor:
 
     def getQuestion(self):
         # have to analize the question being asked
+        self.say.play_ding()
         self.process_command()
 
 
@@ -38,12 +39,10 @@ class VoiceProcessor:
 
 
     def askQuestion(self, question):
-        response = self.analizeQuestion.analiseQuestion(question)
+        if question != "":
+            response = self.analizeQuestion.analiseQuestion(question)
+        if(len(response) > 100):
+            response = response[:99]
 
-        # if len(res.pods) > 0:
-        #     pod = res.pods[1]
-        #     if pod.text:
-        #         answer = pod.text.encode("ascii", "ignore")
-        #         print ("answer to the question is " + answer)
-        #         self.say.google_say(answer);
-
+        if response != "":
+            self.say.google_say(response)

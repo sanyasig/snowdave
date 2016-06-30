@@ -44,18 +44,23 @@ class ProcesQuestion:
 
 
     def analiseQuestion(self, question):
+        wit_response = self.analiser.message(question);
+        response = "";
+        entities = wit_response['entities']
+        if("intent" in entities):
+            intent = entities['intent'][0]
+            intent_string  = self.convertUnicode(intent['value'])
 
-        response = self.analiser.message(question);
-
-        entities = response['entities']
-        intent = entities['intent'][0]
-        intent_string  = self.convertUnicode(intent['value'])
-
-        if intent_string in self.actions:
-            self.actions[intent_string](self, entities)
+            if intent_string in self.actions:
+                response = self.actions[intent_string](self, entities)
         else:
             res = self.wolfram_client.query(question)
-        return "something to say";
+            if len(res.pods) > 0:
+                pod = res.pods[1]
+                if pod.text:
+                    response = pod.text.encode("ascii", "ignore")
+            print response
+        return response;
 
     def convertUnicode(self, value):
         return unicodedata.normalize('NFKD', value).encode('ascii', 'ignore')
