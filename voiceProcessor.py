@@ -1,18 +1,19 @@
-import wolframalpha
-import speech_recognition as sr
 import time
 
+import speech_recognition as sr
 
+import processQuestion as processQuestion
 from speech import Speech
-from wit import Wit
-from processQuestion import ProcesQuestion
+
+
 class VoiceProcessor:
+
 
     def __init__(self):
         self.recigniser = sr.Recognizer()
         self.mic = sr.Microphone()
         self.say = Speech()
-        self.analizeQuestion = ProcesQuestion()
+        self.analizeQuestion = processQuestion.ProcesQuestion()
         with self.mic as source:
             self.recigniser.adjust_for_ambient_noise(source)
 

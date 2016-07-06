@@ -2,7 +2,7 @@ import pyttsx
 from gtts import gTTS
 from pydub import AudioSegment
 from pydub.playback import play
-from Google_TTS import GoogleTTS
+from googleTTS import GoogleTTS
 
 class Speech:
 

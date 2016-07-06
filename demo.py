@@ -17,7 +17,7 @@ def interrupt_callback():
 
 model = "resources/Alexa.pmdl"
 vr = VoiceProcessor()
-#vr.askQuestion("what is the weather in london")
+vr.askQuestion("turn on tv")
 
 # capture SIGINT signal, e.g., Ctrl+C
 signal.signal(signal.SIGINT, signal_handler)
