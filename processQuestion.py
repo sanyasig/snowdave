@@ -31,12 +31,8 @@ class ProcesQuestion:
         print wit_response
         entities = wit_response['entities']
 
-        if("intent" in entities):
-            intent = entities['intent'][0]
-            intent_string  = self.convertUnicode(intent['value'])
-
-            if intent_string in self.action.actions:
-                response = self.action.callAction(intent_string, entities)
+        if(self.action.isHandeledByDave(entities)):
+             response = self.action.callAction(entities)
 
         else:
             res = self.wolfram_client.query(question)

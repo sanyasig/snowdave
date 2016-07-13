@@ -46,8 +46,24 @@ class Actions:
     }
 
 
-    def callAction (self, intentString, entities):
-        self.actions[intentString](self, entities)
+    def callAction (self, entities):
+        intent = entities['intent'][0]
+        intent_string = self.convertUnicode(intent['value'])
+        return self.actions[intent_string](self, entities)
+
+
+    def isHandeledByDave(self, entities):
+        isValidAction = False
+
+        if "intent" in entities:
+            intent = entities['intent'][0]
+            confidence = intent['confidence']
+            intent_string = self.convertUnicode(intent['value'])
+            isValidAction = intent_string in self.actions
+
+        if isValidAction and  (confidence > 0.8):
+            return True
+        return False
 
 
     def convertUnicode(self, value):

@@ -1,4 +1,4 @@
-import paho.mqtt.client as mqtt
+import paho.mqtt.client as paho
 from enum import Enum
 
 class MqttTopics(Enum):
@@ -10,9 +10,23 @@ class MqttTopics(Enum):
 
 class MqttManager:
 
+    def on_publish(client, userdata, mid):
+        print("mid: " + str(mid))
+    #
+    # client = paho.Client()
+    # client.on_publish = on_publish
+    # client.connect('192.168.0.3', 1883)
+
     def __init__(self):
-        self.mqtt_server_url = "192.168.0.3"
+        print "init of mqttMessanger"
+        # self.mqtt_server_url = "192.168.0.3"
+        #
+        # self.client.loop_start()
 
     def controlTV(self, message):
         print "stuff i get " + message
+       # (rc, mid) = self.client.publish('esp_ir', message, qos=1)
+
+
+
 

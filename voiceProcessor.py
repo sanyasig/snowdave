@@ -20,7 +20,6 @@ class VoiceProcessor:
 
     def getQuestion(self):
         # have to analize the question being asked
-        self.say.play_ding()
         self.process_command()
 
 
@@ -30,8 +29,10 @@ class VoiceProcessor:
         with sr.Microphone() as source:
             self.recigniser.adjust_for_ambient_noise(source)
             print("Listening!")
+            self.say.play_ding()
             audio = r.listen(source)
         try:
+            print "sending voice to google"
             question = r.recognize_google(audio).lower()
             print("Google Thinks you said : " + question)
             self.askQuestion(question)
@@ -42,8 +43,9 @@ class VoiceProcessor:
     def askQuestion(self, question):
         if question != "":
             response = self.analizeQuestion.analiseQuestion(question)
-        if(len(response) > 100):
-            response = response[:99]
+        if response:
+            if(len(response) > 100):
+                response = response[:99]
 
-        if response != "":
-            self.say.google_say(response)
+            if response != "":
+                self.say.google_say(response)
