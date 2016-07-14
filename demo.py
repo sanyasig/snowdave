@@ -17,12 +17,13 @@ def interrupt_callback():
 
 model = "resources/Alexa.pmdl"
 vr = VoiceProcessor()
-vr.askQuestion("turn on tv")
+vr.getQuestion()
+#vr.askQuestion("turn on tv")
 
 # capture SIGINT signal, e.g., Ctrl+C
 signal.signal(signal.SIGINT, signal_handler)
 
-detector = snowboydecoder.HotwordDetector(model, sensitivity=0.50)
+detector = snowboydecoder.HotwordDetector(model, sensitivity=0.40)
 print('Listening... Press Ctrl+C to exit')
 
 # main loop

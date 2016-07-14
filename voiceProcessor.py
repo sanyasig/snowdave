@@ -3,6 +3,7 @@ import time
 import speech_recognition as sr
 
 import processQuestion as processQuestion
+from snowDaveListner import SnowDaveListner
 from speech import Speech
 
 
@@ -14,8 +15,8 @@ class VoiceProcessor:
         self.mic = sr.Microphone()
         self.say = Speech()
         self.analizeQuestion = processQuestion.ProcesQuestion()
-        with self.mic as source:
-            self.recigniser.adjust_for_ambient_noise(source)
+        # with self.mic as source:
+        #     self.recigniser.adjust_for_ambient_noise(source)
 
 
     def getQuestion(self):
@@ -26,11 +27,13 @@ class VoiceProcessor:
     def process_command(self):
         time.sleep(0.2)
         r = sr.Recognizer()
+        snowDaveListner = SnowDaveListner()
+       #snowDaveListner.maxListenTime = 2
         with sr.Microphone() as source:
-            self.recigniser.adjust_for_ambient_noise(source)
+            snowDaveListner.adjust_for_ambient_noise(source)
             print("Listening!")
             self.say.play_ding()
-            audio = r.listen(source)
+            audio = snowDaveListner.listen(source, 5, 5)
         try:
             print "sending voice to google"
             question = r.recognize_google(audio).lower()
