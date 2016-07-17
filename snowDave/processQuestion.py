@@ -1,8 +1,11 @@
 import unicodedata
+import sys
+sys.path.insert(0, 'action')
 
 import wolframalpha
 from wit import Wit
 
+# noinspection PyUnresolvedReferences
 from actions import Actions
 
 
