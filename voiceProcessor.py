@@ -15,8 +15,6 @@ class VoiceProcessor:
         self.mic = sr.Microphone()
         self.say = Speech()
         self.analizeQuestion = processQuestion.ProcesQuestion()
-        # with self.mic as source:
-        #     self.recigniser.adjust_for_ambient_noise(source)
 
 
     def getQuestion(self):
@@ -28,17 +26,19 @@ class VoiceProcessor:
         time.sleep(0.2)
         r = sr.Recognizer()
         snowDaveListner = SnowDaveListner()
-       #snowDaveListner.maxListenTime = 2
+
         with sr.Microphone() as source:
             snowDaveListner.adjust_for_ambient_noise(source)
             print("Listening!")
             self.say.play_ding()
             audio = snowDaveListner.listen(source, 5, 5)
+
         try:
             print "sending voice to google"
             question = r.recognize_google(audio).lower()
             print("Google Thinks you said : " + question)
             self.askQuestion(question)
+
         except sr.UnknownValueError:
             print("google could not Recognise what you said")
 
