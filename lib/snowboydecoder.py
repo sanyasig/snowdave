@@ -167,7 +167,8 @@ class HotwordDetector(object):
             if ans == -1:
                 logger.warning("Error initializing streams or reading audio data")
             elif ans == -2:
-                logger.info("Silence")
+                #logger.info("Silence")
+                pass
             elif ans > 0:
                 message = "Keyword " + str(ans) + " detected at time: "
                 message += time.strftime("%Y-%m-%d %H:%M:%S",

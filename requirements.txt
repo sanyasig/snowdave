@@ -1,2 +1,1 @@
-wolframalpha
 PyAudio==0.2.9
