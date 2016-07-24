@@ -1,8 +1,10 @@
 import pyttsx
-from gtts import gTTS
 from pydub import AudioSegment
 from pydub.playback import play
-from googleTTS import GoogleTTS
+import os
+
+from voiceDetection.googleTTS import GoogleTTS
+
 
 class Speech:
 
@@ -12,6 +14,8 @@ class Speech:
     def __init__(self, engine=None):
         self.engine = engine
         self.googleEngine = GoogleTTS()
+        current_dir = os.path.dirname(os.path.realpath(__file__))
+        self.resourceDir = os.path.join(current_dir, "../resources/")
 
 
     def init_pyttsx(self):
@@ -40,5 +44,5 @@ class Speech:
         play(audioStream)
 
     def play_ding(self):
-        audioStream = AudioSegment.from_wav("resources/ding.wav")
+        audioStream = AudioSegment.from_wav(self.resourceDir + "ding.wav")
         play(audioStream)

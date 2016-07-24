@@ -1,23 +1,21 @@
 #!/usr/bin/env python
 
 import collections
-import pyaudio
-import snowboydetect
+import logging
+import os
 import time
 import wave
-import wave
-import os
-import logging
+
+import pyaudio
+
+import snowboydetect
 
 logging.basicConfig()
 logger = logging.getLogger("snowboy")
 logger.setLevel(logging.DEBUG)
 TOP_DIR = os.path.dirname(os.path.abspath(__file__))
 
-RESOURCE_FILE = os.path.join(TOP_DIR, "resources/common.res")
-DETECT_DING = os.path.join(TOP_DIR, "resources/ding.wav")
-DETECT_DONG = os.path.join(TOP_DIR, "resources/dong.wav")
-
+RESOURCE_FILE = os.path.join(TOP_DIR, "common.res")
 
 class RingBuffer(object):
     """Ring buffer to hold audio from PortAudio"""
@@ -35,28 +33,28 @@ class RingBuffer(object):
         return tmp
 
 
-def play_audio_file(fname=DETECT_DING):
-    """Simple callback function to play a wave file. By default it plays
-    a Ding sound.
-
-    :param str fname: wave file name
-    :return: None
-    """
-    ding_wav = wave.open(fname, 'rb')
-    ding_data = ding_wav.readframes(ding_wav.getnframes())
-    audio = pyaudio.PyAudio()
-    pyaudio.__version__
-
-    stream_out = audio.open(
-        format=audio.get_format_from_width(ding_wav.getsampwidth()),
-        channels=ding_wav.getnchannels(),
-        rate=ding_wav.getframerate(), input=False, output=True)
-    stream_out.start_stream()
-    stream_out.write(ding_data)
-    time.sleep(0.2)
-    stream_out.stop_stream()
-    stream_out.close()
-    audio.terminate()
+# def play_audio_file(fname=DETECT_DING):
+#     """Simple callback function to play a wave file. By default it plays
+#     a Ding sound.
+#
+#     :param str fname: wave file name
+#     :return: None
+#     """
+#     ding_wav = wave.open(fname, 'rb')
+#     ding_data = ding_wav.readframes(ding_wav.getnframes())
+#     audio = pyaudio.PyAudio()
+#     pyaudio.__version__
+#
+#     stream_out = audio.open(
+#         format=audio.get_format_from_width(ding_wav.getsampwidth()),
+#         channels=ding_wav.getnchannels(),
+#         rate=ding_wav.getframerate(), input=False, output=True)
+#     stream_out.start_stream()
+#     stream_out.write(ding_data)
+#     time.sleep(0.2)
+#     stream_out.stop_stream()
+#     stream_out.close()
+#     audio.terminate()
 
 
 class HotwordDetector(object):
@@ -118,7 +116,7 @@ class HotwordDetector(object):
             stream_callback=audio_callback)
 
 
-    def start(self, detected_callback=play_audio_file,
+    def start(self, detected_callback=None,
               interrupt_check=lambda: False,
               sleep_time=0.03):
         """

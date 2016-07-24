@@ -1,8 +1,8 @@
-import snowboydecoder
-import sys
+import os
 import signal
-import pyaudio
-from voiceProcessor import VoiceProcessor
+
+import snowboydecoder
+from voiceDetection.voiceProcessor import VoiceProcessor
 
 
 class SnowDave():
@@ -11,7 +11,8 @@ class SnowDave():
 
     def  __init__(self):
         self.interrupted = False
-        self.model = "resources/Alexa.pmdl"
+        self.model = os.path.dirname(os.path.realpath(__file__)) + "/Alexa.pmdl"
+
 
     def signal_handler(self,signal, frame):
         self.interrupted = True
