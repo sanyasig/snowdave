@@ -2,6 +2,7 @@ from BaseVoiceControllerModule import BaseVoiceControllerModule
 
 import requests
 import random
+from subprocess import Popen, PIPE, call
 
 # See http://mopidy.readthedocs.io/en/latest/api/core/#core-api
 # Also checkout https://bitbucket.org/pyglet/pyglet/wiki/Home
@@ -15,6 +16,13 @@ class MopidyController(BaseVoiceControllerModule):
 
     def action(self, keyword, question):
         print "Doing some stuff with mopidy"
+        process = Popen(["pactl", "list", "sinks"], stdout=PIPE)
+        (output, err) = process.communicate()
+        exit_code = process.wait()
+        if not "bluez_sink.00_15_83_6B_63_41" in output:
+            print "Restarting mopidy"
+            call(["/home/pi/connectBluetoothAudio.sh"])
+
         if "music" in question:
             if "play" in question:
                 self.play_random_playlist()

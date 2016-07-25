@@ -5,6 +5,8 @@ import pyaudio
 #from pydub import AudioSegment
 import speech_recognition as sr
 
+from subprocess import Popen, PIPE, call
+
 import modules
 from modules import *
 from lib import snowboydecoder
@@ -78,7 +80,6 @@ class VoiceController:
 if __name__ == "__main__":
 
     if True: #This horrible hack is to deal with the bluetooth and pulse audio not being connect before mopidy starts.
-        from subprocess import Popen, PIPE, call
         process = Popen(["pactl", "list", "sinks"], stdout=PIPE)
         (output, err) = process.communicate()
         exit_code = process.wait()
