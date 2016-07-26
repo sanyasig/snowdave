@@ -79,14 +79,14 @@ class VoiceController:
 
 if __name__ == "__main__":
 
-    if True: #This horrible hack is to deal with the bluetooth and pulse audio not being connect before mopidy starts.
-        process = Popen(["pactl", "list", "sinks"], stdout=PIPE)
-        (output, err) = process.communicate()
-        exit_code = process.wait()
-        if not "bluez_sink.00_15_83_6B_63_41" in output:
-            print "Restarting mopidy"
-            call(["/home/pi/connectBluetoothAudio.sh"])
-            call(["sudo", "service", "mopidy", "restart"])
+    # if True: #This horrible hack is to deal with the bluetooth and pulse audio not being connect before mopidy starts.
+    #     process = Popen(["pactl", "list", "sinks"], stdout=PIPE)
+    #     (output, err) = process.communicate()
+    #     exit_code = process.wait()
+    #     if not "bluez_sink.00_15_83_6B_63_41" in output:
+    #         print "Restarting mopidy"
+    #         call(["/home/pi/connectBluetoothAudio.sh"])
+    #         call(["sudo", "service", "mopidy", "restart"])
 
     vc = VoiceController()
     vc.main()
