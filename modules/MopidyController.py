@@ -11,8 +11,8 @@ from subprocess import Popen, PIPE, call
 class MopidyController(BaseVoiceControllerModule):
     SERVER = "http://dave/mopidy/rpc"
 
-    def should_action(self, keyword, question):
-        return "music" in question
+    def should_action(self, keyword, entities):
+        return self.checkDoAction(entities, "music")
 
     def action(self, keyword, question):
         print "Doing some stuff with mopidy"

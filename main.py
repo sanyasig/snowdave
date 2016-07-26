@@ -8,12 +8,16 @@ import speech_recognition as sr
 from subprocess import Popen, PIPE, call
 
 import modules
+from SnowDaveListner import SnowDaveListner
 from modules import *
 from lib import snowboydecoder
+from processQuestion import ProcesQuestion
+import platform
+
 
 class VoiceController:
     MODEL = "lib/resources/Alexa.pmdl"
-    SENSITIVITY = 0.5
+    SENSITIVITY = 0.4
     INTERRUPTED = False
     
     def __init__(self):
@@ -35,6 +39,7 @@ class VoiceController:
         return self.INTERRUPTED
 
     def main(self):
+        self.process_job("what time is it")
         # capture SIGINT signal, e.g., Ctrl+C
         signal.signal(signal.SIGINT, self.signal_handler)
         while not self.INTERRUPTED:
@@ -43,12 +48,12 @@ class VoiceController:
         self.detector.terminate()
 
     def listen_for_job(self):
-        r = sr.Recognizer()
+        r = SnowDaveListner()
         with sr.Microphone() as source:
             r.adjust_for_ambient_noise(source)
             print "Listening for main question..."
             self.ding_sound()
-            audio = r.listen(source)
+            audio = r.listen(source, 5, 5)
             snowboydecoder.play_audio_file(snowboydecoder.DETECT_DONG)
         try:
             print "Sending voice to Google"
@@ -63,30 +68,32 @@ class VoiceController:
         self.pyttsx_engine.runAndWait()
 
     def ding_sound(self):
-        #audioStream = AudioSegment.from_wav("resources/ding.wav")
-        #play(audioStream)
         snowboydecoder.play_audio_file(snowboydecoder.DETECT_DING)
-        #snowboydecoder.play_audio_file(snowboydecoder.DETECT_DONG)
+
 
     def process_job(self, question):
+
+        processor = ProcesQuestion()
+        entities = processor.analiseQuestion(question)
         for module in self.modules:
-            if module.should_action(None, question):
-                module.action(None, question)
+            if module.should_action(None, entities):
+                module.action(entities, question)
                 # Potentially don't break here, depends if multiple modules should action something or not?
                 break
-
+        # else:
+        #     print "do something with wolframalfa"
 
 
 if __name__ == "__main__":
 
-    # if True: #This horrible hack is to deal with the bluetooth and pulse audio not being connect before mopidy starts.
-    #     process = Popen(["pactl", "list", "sinks"], stdout=PIPE)
-    #     (output, err) = process.communicate()
-    #     exit_code = process.wait()
-    #     if not "bluez_sink.00_15_83_6B_63_41" in output:
-    #         print "Restarting mopidy"
-    #         call(["/home/pi/connectBluetoothAudio.sh"])
-    #         call(["sudo", "service", "mopidy", "restart"])
+    if (("Ubuntu" not in platform.version())): #This horrible hack is to deal with the bluetooth and pulse audio not being connect before mopidy starts.
+        process = Popen(["pactl", "list", "sinks"], stdout=PIPE)
+        (output, err) = process.communicate()
+        exit_code = process.wait()
+        if not "bluez_sink.00_15_83_6B_63_41" in output:
+            print "Restarting mopidy"
+            call(["/home/pi/connectBluetoothAudio.sh"])
+            call(["sudo", "service", "mopidy", "restart"])
 
     vc = VoiceController()
     vc.main()
