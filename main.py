@@ -8,7 +8,7 @@ import speech_recognition as sr
 from subprocess import Popen, PIPE, call
 
 import modules
-from SnowDaveListner import SnowDaveListner
+from lib.SnowDaveListner import SnowDaveListner
 from modules import *
 from lib import snowboydecoder
 from processQuestion import ProcesQuestion
