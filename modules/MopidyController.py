@@ -16,12 +16,6 @@ class MopidyController(BaseVoiceControllerModule):
 
     def action(self, keyword, question):
         print "Doing some stuff with mopidy"
-        process = Popen(["pactl", "list", "sinks"], stdout=PIPE)
-        (output, err) = process.communicate()
-        exit_code = process.wait()
-        if not "bluez_sink.00_15_83_6B_63_41" in output:
-            print "Restarting mopidy"
-            call(["/home/pi/connectBluetoothAudio.sh"])
 
         if "music" in question:
             if "play" in question:
