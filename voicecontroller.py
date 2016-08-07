@@ -17,7 +17,7 @@ class VoiceController:
     INTERRUPTED = False
     
     def __init__(self):
-        self.detector = snowboydecoder.HotwordDetector(self.MODEL, resource="lib/resources/common.res", sensitivity=self.SENSITIVITY)
+        self.create_detector()
         self.pyttsx_engine = pyttsx.init()
         voices = self.pyttsx_engine.getProperty('voices')
         if len(voices) > 1:
@@ -27,6 +27,10 @@ class VoiceController:
         for module in modules.__all__:
             print "Loading module: " + module
             self.modules.append(eval(module + "." + module + "()"))
+
+    def create_detector(self):
+        self.detector = snowboydecoder.HotwordDetector(self.MODEL, resource="lib/resources/common.res", sensitivity=self.SENSITIVITY)
+        self.detector.start(detected_callback=self.listen_for_job, interrupt_check=self.interrupt_callback, sleep_time=0.03)
 
     def signal_handler(self, signal, frame):
         self.INTERRUPTED = True
@@ -40,9 +44,12 @@ class VoiceController:
         while not self.INTERRUPTED:
             print "Listening for hotword..."
             self.detector.start(detected_callback=self.listen_for_job, interrupt_check=self.interrupt_callback, sleep_time=0.03)
+            self.listen_for_job();
         self.detector.terminate()
 
     def listen_for_job(self):
+        print "in listen for job"
+        self.detector.terminate()
         r = sr.Recognizer()
         with sr.Microphone() as source:
             r.adjust_for_ambient_noise(source)
@@ -57,6 +64,7 @@ class VoiceController:
             self.process_job(question)
         except sr.UnknownValueError:
             print("There was a problem whilst processing your question")
+        self.create_detector()
 
     def talk_back(self, text_to_say):
         self.pyttsx_engine.say(text_to_say)
@@ -78,16 +86,6 @@ class VoiceController:
 
 
 if __name__ == "__main__":
-
-    # if True: #This horrible hack is to deal with the bluetooth and pulse audio not being connect before mopidy starts.
-    #     process = Popen(["pactl", "list", "sinks"], stdout=PIPE)
-    #     (output, err) = process.communicate()
-    #     exit_code = process.wait()
-    #     if not "bluez_sink.00_15_83_6B_63_41" in output:
-    #         print "Restarting mopidy"
-    #         call(["/home/pi/connectBluetoothAudio.sh"])
-    #         call(["sudo", "service", "mopidy", "restart"])
-
     vc = VoiceController()
     vc.main()
     #vc.process_job("play me some music")
