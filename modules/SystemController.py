@@ -4,15 +4,15 @@ from subprocess import Popen, PIPE, call
 
 class SystemController(BaseVoiceControllerModule):
     def __init__(self):
-        process = Popen(["pactl", "list", "sinks"], stdout=PIPE)
-        # (output, err) = process.communicate()
-        # exit_code = process.wait()
-        # #if not "bluez_sink.00_15_83_6B_63_41" in output:
-        # if not "jongo" in output:
-        #     print "Restarting mopidy"
-        #     #call(["/home/pi/connectBluetoothAudio.sh"])
-        #     call(["/home/pi/startPulse.sh"])
-        #     call(["sudo", "service", "mopidy", "restart"])
+       process = Popen(["pactl", "list", "sinks"], stdout=PIPE)
+       # (output, err) = process.communicate()
+       # exit_code = process.wait()
+        #if not "bluez_sink.00_15_83_6B_63_41" in output:
+       # if not "jongo" in output:
+        #    print "Restarting mopidy"
+         #   #call(["/home/pi/connectBluetoothAudio.sh"])
+          #  call(["/home/pi/startPulse.sh"])
+           # call(["sudo", "service", "mopidy", "restart"])
 
     def should_action(self, keyword, question):
         return "bluetooth" in question or "mopidy" in question or "pulseaudio" in question or "speaker" in question
