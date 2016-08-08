@@ -21,7 +21,7 @@ class VoiceController:
     INTERRUPTED = False
     
     def __init__(self):
-        self.detector = snowboydecoder.HotwordDetector(self.MODEL, resource="lib/resources/common.res", sensitivity=self.SENSITIVITY)
+        self.create_detector()
         self.pyttsx_engine = pyttsx.init()
         voices = self.pyttsx_engine.getProperty('voices')
         if len(voices) > 1:
@@ -32,6 +32,9 @@ class VoiceController:
             print "Loading module: " + module
             self.modules.append(eval(module + "." + module + "()"))
 
+    def create_detector(self):
+        self.detector = snowboydecoder.HotwordDetector(self.MODEL, resource="lib/resources/common.res", sensitivity=self.SENSITIVITY)
+	self.detector.start(detected_callback=self.listen_for_job, interrupt_check=self.interrupt_callback, sleep_time=0.03)
     def signal_handler(self, signal, frame):
         self.INTERRUPTED = True
 
@@ -48,7 +51,12 @@ class VoiceController:
         self.detector.terminate()
 
     def listen_for_job(self):
+<<<<<<< HEAD:main.py
         r = SnowDaveListner()
+=======
+        self.detector.terminate()
+        r = sr.Recognizer()
+>>>>>>> ash:voicecontroller.py
         with sr.Microphone() as source:
             r.adjust_for_ambient_noise(source)
             print "Listening for main question..."
@@ -62,6 +70,7 @@ class VoiceController:
             self.process_job(question)
         except sr.UnknownValueError:
             print("There was a problem whilst processing your question")
+        self.create_detector()
 
     def talk_back(self, text_to_say):
         self.pyttsx_engine.say(text_to_say)
@@ -72,6 +81,7 @@ class VoiceController:
 
 
     def process_job(self, question):
+<<<<<<< HEAD:main.py
 
         processor = ProcesQuestion()
         entities = processor.analiseQuestion(question)
@@ -95,6 +105,18 @@ if __name__ == "__main__":
             call(["/home/pi/connectBluetoothAudio.sh"])
             call(["sudo", "service", "mopidy", "restart"])
 
+=======
+	print "pricess question :" + question
+        #for module in self.modules:
+         #   if module.should_action(None, question):
+          #      module.action(None, question)
+           #     # Potentially don't break here, depends if multiple modules should action something or not?
+            #    break
+
+
+
+if __name__ == "__main__":
+>>>>>>> ash:voicecontroller.py
     vc = VoiceController()
     vc.main()
     #vc.process_job("play me some music")
