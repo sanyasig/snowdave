@@ -8,6 +8,7 @@ import speech_recognition as sr
 from subprocess import Popen, PIPE, call
 
 import modules
+from SnowDaveListner import SnowDaveListner
 from modules import *
 from lib import snowboydecoder
 from processQuestion import ProcesQuestion
@@ -16,11 +17,12 @@ import platform
 
 class VoiceController:
     MODEL = "lib/resources/Alexa.pmdl"
-    SENSITIVITY = 0.4
+    SENSITIVITY = 0.5
     INTERRUPTED = False
     
     def __init__(self):
-        self.create_detector()
+        self.detector = snowboydecoder.HotwordDetector(self.MODEL, resource="lib/resources/common.res",
+                                                       sensitivity=self.SENSITIVITY)
         self.pyttsx_engine = pyttsx.init()
         voices = self.pyttsx_engine.getProperty('voices')
         if len(voices) > 1:
@@ -51,6 +53,7 @@ class VoiceController:
         self.detector.terminate()
 
     def listen_for_job(self):
+        self.detector.terminate()
         r = SnowDaveListner()
         with sr.Microphone() as source:
             r.adjust_for_ambient_noise(source)
@@ -76,19 +79,13 @@ class VoiceController:
 
 
     def process_job(self, question):
-
         processor = ProcesQuestion()
         entities = processor.analiseQuestion(question)
         for module in self.modules:
             if module.should_action(None, entities):
                 module.action(entities, question)
-                # Potentially don't break here, depends if multiple modules should action something or not?
                 break
-        # else:
-        #     print "do something with wolframalfa"
-
 
 if __name__ == "__main__":
     vc = VoiceController()
     vc.main()
-    #vc.process_job("play me some music")
