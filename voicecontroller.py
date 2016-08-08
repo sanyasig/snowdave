@@ -30,7 +30,7 @@ class VoiceController:
 
     def create_detector(self):
         self.detector = snowboydecoder.HotwordDetector(self.MODEL, resource="lib/resources/common.res", sensitivity=self.SENSITIVITY)
-
+	self.detector.start(detected_callback=self.listen_for_job, interrupt_check=self.interrupt_callback, sleep_time=0.03)
     def signal_handler(self, signal, frame):
         self.INTERRUPTED = True
 
@@ -74,11 +74,12 @@ class VoiceController:
         #snowboydecoder.play_audio_file(snowboydecoder.DETECT_DONG)
 
     def process_job(self, question):
-        for module in self.modules:
-            if module.should_action(None, question):
-                module.action(None, question)
-                # Potentially don't break here, depends if multiple modules should action something or not?
-                break
+	print "pricess question :" + question
+        #for module in self.modules:
+         #   if module.should_action(None, question):
+          #      module.action(None, question)
+           #     # Potentially don't break here, depends if multiple modules should action something or not?
+            #    break
 
 
 
