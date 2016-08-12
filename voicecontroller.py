@@ -1,32 +1,67 @@
-import sys
 import pyttsx
 import signal
-import pyaudio
 #from pydub import AudioSegment
 import speech_recognition as sr
-
-from subprocess import Popen, PIPE, call
+import logging
+import os
 
 import modules
 from modules import *
 from lib import snowboydecoder
 
+from gtts import gTTS
+import pyglet
+from tempfile import NamedTemporaryFile
+import subprocess
+
+class ResponseLibrary:
+    ENGINE = "google" #"pyttsx"
+    def __init__(self):
+        self.pyttsx_engine = pyttsx.init()
+        voices = self.pyttsx_engine.getProperty('voices')
+        if os.name == "nt" and len(voices) > 1:
+            self.pyttsx_engine.setProperty('voice', voices[0].id)
+
+
+
+    def say(self, message):
+        logging.info(message)
+        print(message)
+        if self.ENGINE == "google":
+            tts = gTTS(text=message, lang='en')
+            f = NamedTemporaryFile(suffix=".mp3")
+            tts.write_to_fp(f)
+            f.flush()
+            subprocess.Popen(['mpg123', '-q', f.name]).wait()
+            f.close()
+
+            #music = pyglet.media.load(f.name)
+            #music.play()
+            #pyglet.app.run()
+        else:
+            self.pyttsx_engine.say(message)
+            self.pyttsx_engine.runAndWait()
+
+    def ding(self, dong=False):
+        sound = snowboydecoder.DETECT_DONG if dong else snowboydecoder.DETECT_DING
+        snowboydecoder.play_audio_file(sound)
+
 class VoiceController:
     MODEL = "lib/resources/Alexa.pmdl"
     SENSITIVITY = 0.5
     INTERRUPTED = False
+    FINISHED_PROCESSING_JOB = True
     
     def __init__(self):
         self.create_detector()
-        self.pyttsx_engine = pyttsx.init()
-        voices = self.pyttsx_engine.getProperty('voices')
-        if len(voices) > 1:
-            self.pyttsx_engine.setProperty('voice', voices[0].id)
+        self.response_library = ResponseLibrary()
 
         self.modules = []
         for module in modules.__all__:
-            print "Loading module: " + module
-            self.modules.append(eval(module + "." + module + "()"))
+            logging.info("Loading module: " + module)
+            moduleInstance = eval(module + "." + module + "()")
+            moduleInstance.set_response_library(self.response_library)
+            self.modules.append(moduleInstance)
 
     def create_detector(self):
         self.detector = snowboydecoder.HotwordDetector(self.MODEL, resource="lib/resources/common.res", sensitivity=self.SENSITIVITY)
@@ -35,13 +70,14 @@ class VoiceController:
         self.INTERRUPTED = True
 
     def interrupt_callback(self):
-        return self.INTERRUPTED
+        return self.INTERRUPTED or self.FINISHED_PROCESSING_JOB
 
     def main(self):
         # capture SIGINT signal, e.g., Ctrl+C
         signal.signal(signal.SIGINT, self.signal_handler)
         while not self.INTERRUPTED:
-            print "Listening for hotword..."
+            self.FINISHED_PROCESSING_JOB = False
+            logging.info("Listening for hotword...")
             self.detector.start(detected_callback=self.listen_for_job, interrupt_check=self.interrupt_callback, sleep_time=0.03)
         self.detector.terminate()
 
@@ -50,39 +86,42 @@ class VoiceController:
         r = sr.Recognizer()
         with sr.Microphone() as source:
             r.adjust_for_ambient_noise(source)
-            print "Listening for main question..."
-            self.ding_sound()
+            logging.info("Listening for main question...")
+            self.response_library.ding()
             audio = r.listen(source)
-            snowboydecoder.play_audio_file(snowboydecoder.DETECT_DONG)
+            self.response_library.ding(True)
         try:
-            print "Sending voice to Google"
+            logging.info("Sending voice to Google")
             question = r.recognize_google(audio).lower()
-            print("Google thinks you said: " + question)
+            logging.info("Google thinks you said: " + question)
+            print("Q: " + question)
             self.process_job(question)
         except sr.UnknownValueError:
-            print("There was a problem whilst processing your question")
+            logging.error("There was a problem whilst processing your question")
         self.create_detector()
+        self.FINISHED_PROCESSING_JOB = True
 
-    def talk_back(self, text_to_say):
-        self.pyttsx_engine.say(text_to_say)
-        self.pyttsx_engine.runAndWait()
-
-    def ding_sound(self):
-        #audioStream = AudioSegment.from_wav("resources/ding.wav")
-        #play(audioStream)
-        snowboydecoder.play_audio_file(snowboydecoder.DETECT_DING)
-        #snowboydecoder.play_audio_file(snowboydecoder.DETECT_DONG)
 
     def process_job(self, question):
+        has_response = False
         for module in self.modules:
             if module.should_action(None, question):
+                self.response_library.ding(True)
                 module.action(None, question)
                 # Potentially don't break here, depends if multiple modules should action something or not?
+                has_response = True
                 break
+
+        if not has_response:
+            for module in self.modules:
+                if module.is_catchall:
+                    module.action(None, question)
+
 
 
 
 if __name__ == "__main__":
+    import setup_logging
     vc = VoiceController()
     vc.main()
     #vc.process_job("play me some music")

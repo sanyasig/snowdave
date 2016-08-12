@@ -40,6 +40,7 @@ class SystemController(BaseVoiceControllerModule):
     def restart_mopidy(self):
         #Stop and start rather than restart in case dead to begin with
         call(["sudo", "service", "mopidy", "stop"])
+        call(["sudo", "service", "mopidy", "start"])
 
     def restart_pulseaudio(self):
         call(["/home/pi/startPulse.sh"])

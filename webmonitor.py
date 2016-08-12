@@ -3,7 +3,7 @@ from bottle import get, post, request, route, run
 from voicecontroller import VoiceController
 from threading import Thread
 
-VC = VoiceController()
+VC = None
 
 @route('/')
 def index():
@@ -28,7 +28,10 @@ def callback(name):
 
 def start_voice_controller():
     while startVoice:
-        VC.main()
+        VC = VoiceController()
+        try:
+            VC.main()
+        except Exception: VC = None
 
 if __name__ == "__main__":
     run(host='0.0.0.0', port=8000, reloader=True)
