@@ -18,10 +18,6 @@ class MopidyController(BaseVoiceControllerModule):
 
         if "ash" in question:
             self.play_playlist(name="Ash")
-        elif "play" in question:
-            self.play_random_playlist()
-        elif "stop" in question:
-            self.stop_music()
         elif "pause" in question:
             self.pause_music()
         elif "resume" in question:
@@ -30,6 +26,14 @@ class MopidyController(BaseVoiceControllerModule):
             self.next_track()
         elif "previous" in question:
             self.previous_track()
+        elif "play" in question:
+            self.play_random_playlist()
+        elif "stop" in question:
+            self.stop_music()
+        elif "down" in question:
+            self.turn_down()
+        elif "up" in question:
+            self.turn_up()
         else:
             self.response.say("Sorry I didn't understand that")
 
@@ -94,3 +98,15 @@ class MopidyController(BaseVoiceControllerModule):
 
     def previous_track(self):
         r = requests.post(self.SERVER, json={"jsonrpc": "2.0", "id": 1, "method": "core.tracklist.previous_track", "params": {}})
+
+    def town_down(self):
+        self.adjust_volume(-10)
+
+    def town_up(self):
+        self.adjust_volume(10)
+
+    def adjust_volume(self, change):
+        r = requests.post(self.SERVER, json={"jsonrpc": "2.0", "id": 1, "method": "core.mixer.get_volume", "params": {}})
+        currentVolume = r.json()["result"]
+
+        r = requests.post(self.SERVER, json={"jsonrpc": "2.0", "id": 1, "method": "core.mixer.set_volume", "params": {"volume": currentVolume+change}})

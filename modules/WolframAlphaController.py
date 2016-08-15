@@ -3,7 +3,7 @@ import wolframalpha
 
 class WolframAlphaController(BaseVoiceControllerModule):
     WOLFRAM_ALPHA_KEY = "QQG9XK-5HQA4Q3257"
-    is_catchall = True
+    is_catchall = False #TODO
 
     def __init__(self):
         self.wolfram_client = wolframalpha.Client(self.WOLFRAM_ALPHA_KEY)
@@ -11,7 +11,7 @@ class WolframAlphaController(BaseVoiceControllerModule):
     def should_action(self, keyword, question):
         return False
 
-    def action(self, keyword, question):
+    def action(self, keyword, question, audio):
         res = self.wolfram_client.query(question)
         if len(res.pods) > 0:
             pod = res.pods[1]

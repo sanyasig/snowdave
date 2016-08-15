@@ -32,7 +32,7 @@ class ResponseLibrary:
             f = NamedTemporaryFile(suffix=".mp3")
             tts.write_to_fp(f)
             f.flush()
-            subprocess.Popen(['mpg123', '-q', f.name]).wait()
+            self.play_mp3(f.name)
             f.close()
 
             #music = pyglet.media.load(f.name)
@@ -44,7 +44,13 @@ class ResponseLibrary:
 
     def ding(self, dong=False):
         sound = snowboydecoder.DETECT_DONG if dong else snowboydecoder.DETECT_DING
+        self.play_wav(sound)
+
+    def play_wav(self, sound):
         snowboydecoder.play_audio_file(sound)
+
+    def play_mp3(self, fname):
+        subprocess.Popen(['mpg123', '-q', fname]).wait()
 
 class VoiceController:
     MODEL = "lib/resources/Alexa.pmdl"
@@ -75,6 +81,7 @@ class VoiceController:
     def main(self):
         # capture SIGINT signal, e.g., Ctrl+C
         signal.signal(signal.SIGINT, self.signal_handler)
+        self.response_library.say("Ready")
         while not self.INTERRUPTED:
             self.FINISHED_PROCESSING_JOB = False
             logging.info("Listening for hotword...")
@@ -84,6 +91,7 @@ class VoiceController:
     def listen_for_job(self):
         self.detector.terminate()
         r = sr.Recognizer()
+        audio = None
         with sr.Microphone() as source:
             r.adjust_for_ambient_noise(source)
             logging.info("Listening for main question...")
@@ -95,14 +103,14 @@ class VoiceController:
             question = r.recognize_google(audio).lower()
             logging.info("Google thinks you said: " + question)
             print("Q: " + question)
-            self.process_job(question)
+            self.process_job(question, audio)
         except sr.UnknownValueError:
             logging.error("There was a problem whilst processing your question")
         self.create_detector()
         self.FINISHED_PROCESSING_JOB = True
 
 
-    def process_job(self, question):
+    def process_job(self, question, audio):
         has_response = False
         for module in self.modules:
             if module.should_action(None, question):
@@ -115,7 +123,7 @@ class VoiceController:
         if not has_response:
             for module in self.modules:
                 if module.is_catchall:
-                    module.action(None, question)
+                    module.action(None, question, audio)
 
 
 

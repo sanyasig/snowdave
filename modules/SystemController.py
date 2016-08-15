@@ -12,7 +12,7 @@ class SystemController(BaseVoiceControllerModule):
             print "Restarting mopidy"
             #call(["/home/pi/connectBluetoothAudio.sh"])
             call(["/home/pi/startPulse.sh"])
-            call(["sudo", "service", "mopidy", "restart"])
+            #call(["sudo", "service", "mopidy", "restart"])
 
     def should_action(self, keyword, question):
         return "bluetooth" in question or "mopidy" in question or "pulseaudio" in question or "speaker" in question
