@@ -17,6 +17,7 @@ class MopidyController(BaseVoiceControllerModule):
         print "Doing some stuff with mopidy"
 
         if "ash" in question:
+            self.response.say("Playing Ash's Playlist")
             self.play_playlist(name="Ash")
         elif "pause" in question:
             self.pause_music()
@@ -26,14 +27,17 @@ class MopidyController(BaseVoiceControllerModule):
             self.next_track()
         elif "previous" in question:
             self.previous_track()
+        elif "down" in question:
+            self.response.say("Turning it down")
+            self.turn_down()
+        elif "up" in question:
+            self.response.say("Turning it up")
+            self.turn_up()
         elif "play" in question:
+            self.response.say("Loading some music")
             self.play_random_playlist()
         elif "stop" in question:
             self.stop_music()
-        elif "down" in question:
-            self.turn_down()
-        elif "up" in question:
-            self.turn_up()
         else:
             self.response.say("Sorry I didn't understand that")
 
@@ -99,10 +103,10 @@ class MopidyController(BaseVoiceControllerModule):
     def previous_track(self):
         r = requests.post(self.SERVER, json={"jsonrpc": "2.0", "id": 1, "method": "core.tracklist.previous_track", "params": {}})
 
-    def town_down(self):
+    def turn_down(self):
         self.adjust_volume(-10)
 
-    def town_up(self):
+    def turn_up(self):
         self.adjust_volume(10)
 
     def adjust_volume(self, change):

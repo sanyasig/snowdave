@@ -10,8 +10,8 @@ from modules import *
 from lib import snowboydecoder
 
 from gtts import gTTS
-import pyglet
 from tempfile import NamedTemporaryFile
+from io import BytesIO
 import subprocess
 
 class ResponseLibrary:
@@ -21,7 +21,6 @@ class ResponseLibrary:
         voices = self.pyttsx_engine.getProperty('voices')
         if os.name == "nt" and len(voices) > 1:
             self.pyttsx_engine.setProperty('voice', voices[0].id)
-
 
 
     def say(self, message):
@@ -34,10 +33,6 @@ class ResponseLibrary:
             f.flush()
             self.play_mp3(f.name)
             f.close()
-
-            #music = pyglet.media.load(f.name)
-            #music.play()
-            #pyglet.app.run()
         else:
             self.pyttsx_engine.say(message)
             self.pyttsx_engine.runAndWait()
@@ -48,6 +43,13 @@ class ResponseLibrary:
 
     def play_wav(self, sound):
         snowboydecoder.play_audio_file(sound)
+
+    def play_mp3_data(self, audioData):
+        f = NamedTemporaryFile(suffix=".mp3")
+        f.write(audioData)
+        f.flush()
+        self.play_mp3(f.name)
+        f.close()
 
     def play_mp3(self, fname):
         subprocess.Popen(['mpg123', '-q', fname]).wait()

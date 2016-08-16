@@ -2,10 +2,14 @@ from BaseVoiceControllerModule import BaseVoiceControllerModule
 import requests
 import logging
 import json
+import time
 import re
 import os
 
 from config import *
+from tempfile import NamedTemporaryFile
+from io import BytesIO
+import stat
 
 class AlexaController(BaseVoiceControllerModule):
     is_catchall = True
@@ -15,9 +19,7 @@ class AlexaController(BaseVoiceControllerModule):
 
     def action(self, keyword, question, audioData):
         audioBytes = audioData.get_wav_data()
-        fObj = open('recording.wav', "wb")
-        fObj.write(audioBytes)
-        fObj.close()
+        fObj = BytesIO(audioBytes)
 
         url = 'https://access-alexa-na.amazon.com/v1/avs/speechrecognizer/recognize'
         headers = {'Authorization' : 'Bearer %s' % self.gettoken()}
@@ -41,13 +43,12 @@ class AlexaController(BaseVoiceControllerModule):
                 "format": "audio/L16; rate=16000; channels=1"
             }
         }
-        with open('recording.wav', "rb") as inf:
-            files = [
-                    ('file', ('request', json.dumps(d), 'application/json; charset=UTF-8')),
-                    ('file', ('audio', inf, 'audio/L16; rate=16000; channels=1'))
-                    ]
-            r = requests.post(url, headers=headers, files=files)
-            print r
+        
+        files = [
+                ('file', ('request', json.dumps(d), 'application/json; charset=UTF-8')),
+                ('file', ('audio', fObj, 'audio/L16; rate=16000; channels=1'))
+                ]
+        r = requests.post(url, headers=headers, files=files)
         if r.status_code == 200:
             logging.debug("Alexa: Victory is mine!")
             for v in r.headers['content-type'].split(";"):
@@ -58,10 +59,8 @@ class AlexaController(BaseVoiceControllerModule):
             for d in data:
                 if (len(d) >= 1024):
                     audio = d.split('\r\n\r\n')[1].rstrip('--')
-            with open("response.mp3", 'wb') as f:
-                f.write(audio)
 
-            self.response.play_mp3("response.mp3")
+            self.response.play_mp3_data(audio)
 
         else:
             logging.error("Alexa Miserable Failure")
@@ -71,7 +70,7 @@ class AlexaController(BaseVoiceControllerModule):
     def gettoken(self):
         token_cache_fname = "token_cache.txt"
         token = None
-        if os.path.exists(token_cache_fname):
+        if os.path.exists(token_cache_fname) and time.time() - os.stat(token_cache_fname)[stat.ST_MTIME] < 300000:
             fObj = open(token_cache_fname, "r")
             token = fObj.read()
             fObj.close()
@@ -92,4 +91,3 @@ class AlexaController(BaseVoiceControllerModule):
             return resp['access_token']
         else:
             return False
-
