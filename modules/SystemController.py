@@ -4,6 +4,8 @@ from subprocess import Popen, PIPE, call
 import socket
 import struct
 
+from config import *
+
 class SystemController(BaseVoiceControllerModule):
     def __init__(self):
         process = Popen(["pactl", "list", "short", "sinks"], stdout=PIPE)
@@ -99,4 +101,3 @@ class SystemController(BaseVoiceControllerModule):
 
     def shutdown_windows_on_lan(self, host, user, pasword):
         call(["net", "rpc", "shutdown", "-I", host, "-U", user+"%"+password])
-        
