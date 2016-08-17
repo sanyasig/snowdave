@@ -100,4 +100,4 @@ class SystemController(BaseVoiceControllerModule):
         sock.sendto(send_data, ('<broadcast>', 7))
 
     def shutdown_windows_on_lan(self, host, user, pasword):
-        call(["net", "rpc", "shutdown", "-I", host, "-U", user+"%"+password])
+        call(["net", "rpc", "shutdown", "-I", host, "-U", user+"%"+windows_password])
