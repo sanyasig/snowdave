@@ -18,16 +18,16 @@ class SystemController(BaseVoiceControllerModule):
             #call(["sudo", "service", "mopidy", "restart"])
 
     def should_action(self, keyword, question):
-        return "bluetooth" in question or "mopidy" in question or "pulseaudio" in question or "speaker" in question or "wake" in question
+        return "bluetooth" in question or "mopidy" in question or "pulseaudio" in question or "speaker" in question or "pc" in question
         #return "enable" in question or "disable" in question or "turn on" in question or "turn off" in question or "connect" in question or "restart" in question
 
     def action(self, keyword, question):
         if "wake" in question:
             self.response.say("Waking Ash's PC")
             self.wake_on_lan("10:BF:48:88:FA:99")
-        elif "shutdown" in question:
+        elif "shutdown" in question or "shut down" in question:
             self.response.say("Shutting down Ash's PC")
-            self.shutdown_windows_on_lan("192.168.0.100", "Ash", windows_password)
+            self.shutdown_windows_on_lan("Ash-PC", "Ash", windows_password)
         elif "speaker" in question:
             if "bathroom" in question:
                 self.change_speaker("jongos3bathroom_dlna")
@@ -97,6 +97,6 @@ class SystemController(BaseVoiceControllerModule):
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
         sock.sendto(send_data, ('<broadcast>', 7))
 
-    def shutdown_windows_on_lan(self, ip, user, pasword):
-        call(["net", "rpc", "shutdown", "-I", ip, "-U", user+"%"+password])
+    def shutdown_windows_on_lan(self, host, user, pasword):
+        call(["net", "rpc", "shutdown", "-I", host, "-U", user+"%"+password])
         
