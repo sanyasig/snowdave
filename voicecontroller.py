@@ -4,6 +4,7 @@ import signal
 import speech_recognition as sr
 import logging
 import os
+import traceback
 
 import modules
 from modules import *
@@ -118,7 +119,10 @@ class VoiceController:
             if module.should_action(None, question):
                 self.response_library.ding(True)
                 try: module.action(None, question)
-                except Exception, e: self.response_library.say("Something went wrong! %s" % e)
+                except Exception, e:
+                    self.response_library.say("Something went wrong! %s" % e)
+                    traceback.print_stack()
+                    logging.error(traceback.print_stack())
                 # Potentially don't break here, depends if multiple modules should action something or not?
                 has_response = True
                 break

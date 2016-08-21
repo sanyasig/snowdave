@@ -26,12 +26,16 @@ class MopidyController(BaseVoiceControllerModule):
             self.play_playlist(name=searchFor)
         elif "some" in question:
             self.response.say("Playing Genre")
-            searchFor = filter(None, filter(None, question.replace(" music", "").split("play me some"))[0].strip()
+            searchFor = filter(None, question.replace(" music", "").split("play me some"))[0].strip()
             self.search_by_genre(searchFor)
+        elif " by " in question:
+            self.response.say("Searching for artist")
+            searchFor = question.split(" by ")[1].strip()
+            self.search_by_artist(searchFor)
         elif "search" in question:
             self.response.say("Searching")
             searchFor = filter(None, question.split("music search"))[0].replace("for ", "").strip()
-            self.search_by_genre(searchFor)
+            self.search(searchFor)
         elif "pause" in question:
             self.pause_music()
         elif "resume" in question:
@@ -56,16 +60,17 @@ class MopidyController(BaseVoiceControllerModule):
 
     def search(self, query):
         #albums artists tracks any
-        return search_with_keyword("any", query)
+        return self.search_with_keyword("any", query)
 
     def search_by_genre(self, query):
-        return search_with_keyword("genre", query)
+        return self.search_with_keyword("genre", query)
 
     def search_by_artist(self, query):
-        return search_with_keyword("artist", query)
+        return self.search_with_keyword("artist", query)
 
     def search_with_keyword(self, keyword, query):
-        r = requests.post(self.SERVER, json={"jsonrpc": "2.0", "id": 1, "method": "core.library.search", "params": { keyword: [query]}})
+        #Note currently limiting to spotify, due to the HUGE potential music possibility due to podcasts
+        r = requests.post(self.SERVER, json={"jsonrpc": "2.0", "id": 1, "method": "core.library.search", "params": { keyword: [query], "uris": ['spotify:']}})
         urisToAdd = self.get_items_from_results(r)
         if len(urisToAdd) == 0:
             self.response.say("Nothing found")
@@ -75,8 +80,8 @@ class MopidyController(BaseVoiceControllerModule):
         self.turn_on_shuffle_and_play()
 
 
-    def get_items_from_results(self, results):
-        result = results.json()["result"]
+    def get_items_from_results(self, r):
+        result = r.json()["result"]
         if len(result) == 0:
             print "Nothing found matching query!"
             return
@@ -84,10 +89,11 @@ class MopidyController(BaseVoiceControllerModule):
         urisToAdd = []
         for searchResultType in result:
             for resultKey in searchResultType:
-                if resultKey.startswith("_"):
+                if resultKey.startswith("_") or resultKey == "uri":
                     continue
                 for item in searchResultType[resultKey]:
-                    urisToAdd.append(item["uri"])
+                    try: urisToAdd.append(item["uri"])
+                    except Exception, e: pass
         return urisToAdd
 
 
