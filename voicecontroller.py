@@ -117,7 +117,8 @@ class VoiceController:
         for module in self.modules:
             if module.should_action(None, question):
                 self.response_library.ding(True)
-                module.action(None, question)
+                try: module.action(None, question)
+                except Exception, e: self.response_library.say("Something went wrong! %s" % e)
                 # Potentially don't break here, depends if multiple modules should action something or not?
                 has_response = True
                 break

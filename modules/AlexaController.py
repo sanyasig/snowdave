@@ -70,7 +70,8 @@ class AlexaController(BaseVoiceControllerModule):
     def gettoken(self):
         token_cache_fname = "token_cache.txt"
         token = None
-        if os.path.exists(token_cache_fname) and time.time() - os.stat(token_cache_fname)[stat.ST_MTIME] < 300000:
+        #Time difference is in seconds
+        if os.path.exists(token_cache_fname) and time.time() - os.stat(token_cache_fname)[stat.ST_MTIME] < 300:
             fObj = open(token_cache_fname, "r")
             token = fObj.read()
             fObj.close()

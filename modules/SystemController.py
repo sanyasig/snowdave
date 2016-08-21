@@ -1,6 +1,7 @@
 from BaseVoiceControllerModule import BaseVoiceControllerModule
 
 from subprocess import Popen, PIPE, call
+import subprocess
 import socket
 import struct
 
@@ -20,7 +21,7 @@ class SystemController(BaseVoiceControllerModule):
             #call(["sudo", "service", "mopidy", "restart"])
 
     def should_action(self, keyword, question):
-        return "bluetooth" in question or "mopidy" in question or "pulseaudio" in question or "speaker" in question or "pc" in question
+        return "bluetooth" in question or "mopidy" in question or "pulseaudio" in question or "speaker" in question or "pc" in question or "emulation" in question
         #return "enable" in question or "disable" in question or "turn on" in question or "turn off" in question or "connect" in question or "restart" in question
 
     def action(self, keyword, question):
@@ -41,6 +42,11 @@ class SystemController(BaseVoiceControllerModule):
                 self.change_speaker("bluez_sink.00_15_83_6B_63_41")
             else:
                 self.change_speaker("jongos3playroom_dlna")
+        elif "emulation" in question:
+            if self.contains_stop_word(question):
+                self.stop_emulationstation()
+            else:
+                self.start_emulationstation()
         elif "mopidy" in question:
             if "restart" in question:
                 self.restart_mopidy()
@@ -52,6 +58,13 @@ class SystemController(BaseVoiceControllerModule):
         elif "pulseaudio" in question or "pulse" in question:
             if "restart" in question:
                 self.restart_pulseaudio()
+
+    def start_emulationstation(self):
+        CREATE_NEW_CONSOLE = 0x00000010
+        pid = subprocess.Popen(["emulationstation"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE).pid # , creationflags=CREATE_NEW_CONSOLE (windows)
+
+    def stop_emulationstation(self):
+        subprocess.Popen(["pkill", "-f", "emulationstation"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE)
 
     def connect_bluetooth(self):
         process = Popen(["/home/pi/connectBluetoothAudio.sh"], stdout=PIPE)
