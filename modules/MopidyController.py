@@ -11,7 +11,7 @@ class MopidyController(BaseVoiceControllerModule):
     SERVER = "http://dave/mopidy/rpc"
 
     def should_action(self, keyword, question):
-        return "music" in question or "tune" in question
+        return "music" in question or "tune" in question or "play me" in question
 
     def action(self, keyword, question):
         print "Doing some stuff with mopidy"
@@ -19,6 +19,19 @@ class MopidyController(BaseVoiceControllerModule):
         if "ash" in question:
             self.response.say("Playing Ash's Playlist")
             self.play_playlist(name="Ash")
+        elif "playlist" in question:
+            self.response.say("Playing Playlist")
+            #Should handle: 'play me the ashley playlist' and 'music playlist bob'
+            searchFor = filter(None, filter(None, question.replace("music ", "").split("playlist"))[0].split("play me"))[0].split("play")[0].replace("the", "").strip()
+            self.play_playlist(name=searchFor)
+        elif "some" in question:
+            self.response.say("Playing Genre")
+            searchFor = filter(None, filter(None, question.replace(" music", "").split("play me some"))[0].strip()
+            self.search_by_genre(searchFor)
+        elif "search" in question:
+            self.response.say("Searching")
+            searchFor = filter(None, question.split("music search"))[0].replace("for ", "").strip()
+            self.search_by_genre(searchFor)
         elif "pause" in question:
             self.pause_music()
         elif "resume" in question:
@@ -42,12 +55,41 @@ class MopidyController(BaseVoiceControllerModule):
             self.response.say("Sorry I didn't understand that")
 
     def search(self, query):
-        #curl -d '{"jsonrpc": "2.0", "id": 1, "method": "core.library.search", "params": { "any": ["wilkinson"]}}' http://dave/mopidy/rpc
         #albums artists tracks any
-        r = requests.post(self.SERVER, json={"jsonrpc": "2.0", "id": 1, "method": "core.library.search", "params": { "any": [query]}})
-        print r.text
-        print "-"*50
-        print r.json()
+        return search_with_keyword("any", query)
+
+    def search_by_genre(self, query):
+        return search_with_keyword("genre", query)
+
+    def search_by_artist(self, query):
+        return search_with_keyword("artist", query)
+
+    def search_with_keyword(self, keyword, query):
+        r = requests.post(self.SERVER, json={"jsonrpc": "2.0", "id": 1, "method": "core.library.search", "params": { keyword: [query]}})
+        urisToAdd = self.get_items_from_results(r)
+        if len(urisToAdd) == 0:
+            self.response.say("Nothing found")
+            return
+        self.stop_music()
+        r = requests.post(self.SERVER, json={"jsonrpc": "2.0", "id": 1, "method": "core.tracklist.add", "params": {"uris": urisToAdd }})
+        self.turn_on_shuffle_and_play()
+
+
+    def get_items_from_results(self, results):
+        result = results.json()["result"]
+        if len(result) == 0:
+            print "Nothing found matching query!"
+            return
+
+        urisToAdd = []
+        for searchResultType in result:
+            for resultKey in searchResultType:
+                if resultKey.startswith("_"):
+                    continue
+                for item in searchResultType[resultKey]:
+                    urisToAdd.append(item["uri"])
+        return urisToAdd
+
 
     def getPlaybackState(self):
         #curl -d '{"jsonrpc": "2.0", "id": 1, "method": "core.playback.get_state"}' http://dave/mopidy/rpc
@@ -83,6 +125,10 @@ class MopidyController(BaseVoiceControllerModule):
             count += 1
             return self.play_playlist(count=count)
 
+        self.turn_on_shuffle_and_play()
+
+
+    def turn_on_shuffle_and_play(self):
         r = requests.post(self.SERVER, json={"jsonrpc": "2.0", "id": 1, "method": "core.tracklist.shuffle", "params": {}})
         r = requests.post(self.SERVER, json={"jsonrpc": "2.0", "id": 1, "method": "core.playback.play", "params": {}})
 

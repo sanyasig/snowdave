@@ -11,7 +11,7 @@ class BaseVoiceControllerModule:
         pass
 
     def contains_start_word(self, question):
-        return "enable" in question or "turn on" in question or "connect" in question or "start" in question
+        return any(command in question for command in ["enable", "turn on", "connect", "start"])
 
     def contains_stop_word(self, question):
-        return "disable" in question or "turn off" in question or "disconnect" in question or "stop" in question
+        return any(command in question for command in ["disable", "turn off", "disconnect", "stop"])
