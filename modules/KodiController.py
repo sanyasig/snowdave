@@ -4,15 +4,17 @@ import subprocess
 
 class KodiController(BaseVoiceControllerModule):
     KODI_SERVER = "http://localhost:8080"
+    STANDARD_SORT = {"order": "ascending", "method": "title", "ignorearticle": True}
 
     def __init__(self):
         self.xbmc = XBMC(self.KODI_SERVER + "/jsonrpc")
 
-    def should_action(self, keyword, question):
-        return "kodi" in question or "xbmc" in question
+    def should_action(self, intent, question):
+        return intent["entities"]["intent"][0]["value"].strip() == "kodi"
+        #return "kodi" in question or "xbmc" in question
 
-    def action(self, keyword, question):
-        print "Doing some stuff with mopidy"
+    def action(self, intent, question):
+        print "Doing some stuff with kodi"
 
         if self.contains_start_word(question):
             self.response.say("Starting up kodi")
@@ -20,6 +22,16 @@ class KodiController(BaseVoiceControllerModule):
         elif self.contains_stop_word(question):
             self.response.say("Exiting kodi")
             self.stop_kodi()
+        elif "search_query" in intent["entities"]:
+            name = intent["entities"]["search_query"][0]["value"]
+            episode = None
+            season = None
+            if "number" in intent["entities"]:
+                episode = intent["entities"]["number"][0]["value"]
+                if len(intent["entities"]["number"]) > 1:
+                    season = intent["entities"]["number"][1]["value"]
+            self.play_video(name, season, episode)
+
         elif "find album" in question:
             self.find_album(question)
         else:
@@ -47,3 +59,36 @@ class KodiController(BaseVoiceControllerModule):
 
         else:
             answer = "Couldn't find any albums by that artist"
+
+    def stop_playback(self):
+        playerid = self.xbmc.Player.GetActivePlayers()["result"]
+        if len(playerid) > 0:
+            playerid = playerid[0]["playerid"]
+            self.xbmc.Player.Stop({"playerid": playerid })
+
+    def play_video(self, name, season=None, episode=None):
+        videos = []
+        if not season and not episode:
+            videos = self.xbmc.VideoLibrary.GetMovies({"sort": self.STANDARD_SORT, "filter": {"operator": "contains", "field": "title", "value": name}})["result"]
+
+        if len(videos) > 0 and "movies" in videos and len(videos["movies"]) > 0:
+            item = videos["movies"][0]
+            self.xbmc.Player.Open({"item": {"movieid": item["movieid"] }})
+            self.response.say("Playing " + item["label"])
+
+        else:
+            videos = self.xbmc.VideoLibrary.GetTVShows({"sort": self.STANDARD_SORT, "filter": {"operator": "contains", "field": "title", "value": name}})["result"]
+            if len(videos) > 0 and "tvshows" in videos and len(videos["tvshows"]) > 0:
+                tvshowid = videos["tvshows"][0]["tvshowid"]
+                args = {"sort": self.STANDARD_SORT, "tvshowid": tvshowid}
+                if season:
+                    args["season"] = season
+                if episode:
+                    args["filter"] = {"operator": "contains", "field": "episode", "value": str(episode)}
+                videos = self.xbmc.VideoLibrary.GetEpisodes(args)["result"]
+                if len(videos) > 0:
+                    item = videos["episodes"][0]
+                    self.xbmc.Player.Open({"item": {"episodeid": item["episodeid"] }})
+                    self.response.say("Playing " + item["label"])
+            else:
+                self.response.say("Sorry I could not find what you are looking for")

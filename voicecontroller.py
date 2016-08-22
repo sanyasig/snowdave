@@ -8,12 +8,16 @@ import traceback
 
 import modules
 from modules import *
-from lib import snowboydecoder
+from wit import Wit
+import requests
 
 from gtts import gTTS
 from tempfile import NamedTemporaryFile
 from io import BytesIO
 import subprocess
+
+if os.name != "nt":
+    from lib import snowboydecoder
 
 class ResponseLibrary:
     ENGINE = "google" #"pyttsx"
@@ -27,20 +31,23 @@ class ResponseLibrary:
     def say(self, message):
         logging.info(message)
         print(message)
-        if self.ENGINE == "google":
+        #if self.ENGINE == "google":
+        try:
             tts = gTTS(text=message, lang='en')
             f = NamedTemporaryFile(suffix=".mp3")
             tts.write_to_fp(f)
             f.flush()
             self.play_mp3(f.name)
             f.close()
-        else:
+        #else:
+        except requests.exceptions.HTTPError:
             self.pyttsx_engine.say(message)
             self.pyttsx_engine.runAndWait()
 
     def ding(self, dong=False):
-        sound = snowboydecoder.DETECT_DONG if dong else snowboydecoder.DETECT_DING
-        self.play_wav(sound)
+        if os.name != "nt":
+            sound = snowboydecoder.DETECT_DONG if dong else snowboydecoder.DETECT_DING
+            self.play_wav(sound)
 
     def play_wav(self, sound):
         snowboydecoder.play_audio_file(sound)
@@ -64,6 +71,7 @@ class VoiceController:
     def __init__(self):
         self.create_detector()
         self.response_library = ResponseLibrary()
+        self.witClient = Wit(access_token="2GZ3OP3K2CIWQNH3W6GJDAEXET63AXUA")
 
         self.modules = []
         for module in modules.__all__:
@@ -73,7 +81,8 @@ class VoiceController:
             self.modules.append(moduleInstance)
 
     def create_detector(self):
-        self.detector = snowboydecoder.HotwordDetector(self.MODEL, resource="lib/resources/common.res", sensitivity=self.SENSITIVITY)
+        if os.name != "nt":
+            self.detector = snowboydecoder.HotwordDetector(self.MODEL, resource="lib/resources/common.res", sensitivity=self.SENSITIVITY)
 
     def signal_handler(self, signal, frame):
         self.INTERRUPTED = True
@@ -82,6 +91,11 @@ class VoiceController:
         return self.INTERRUPTED or self.FINISHED_PROCESSING_JOB
 
     def main(self):
+        if os.name == "nt":
+            while not self.INTERRUPTED:
+                self.process_job(raw_input("Question: "), None)
+            return
+
         # capture SIGINT signal, e.g., Ctrl+C
         signal.signal(signal.SIGINT, self.signal_handler)
         self.response_library.say("Ready")
@@ -114,15 +128,18 @@ class VoiceController:
 
 
     def process_job(self, question, audio):
+        #session_id = uuid.uuid1()
+
+        witResponse = self.witClient.message(question) #run_actions(session_id, question)
+        print witResponse
         has_response = False
         for module in self.modules:
-            if module.should_action(None, question):
+            if module.should_action(witResponse, question):
                 self.response_library.ding(True)
-                try: module.action(None, question)
+                try: module.action(witResponse, question)
                 except Exception, e:
-                    self.response_library.say("Something went wrong! %s" % e)
-                    traceback.print_stack()
                     logging.error(traceback.print_stack())
+                    self.response_library.say("Something went wrong! %s" % e)
                 # Potentially don't break here, depends if multiple modules should action something or not?
                 has_response = True
                 break
@@ -130,7 +147,7 @@ class VoiceController:
         if not has_response:
             for module in self.modules:
                 if module.is_catchall:
-                    module.action(None, question, audio)
+                    module.action(witResponse, question, audio)
 
 
 

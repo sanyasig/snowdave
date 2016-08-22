@@ -4,3 +4,4 @@ pyttsx
 SpeechRecognition
 xbmc-json
 wolframalpha
+wit

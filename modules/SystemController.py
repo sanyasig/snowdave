@@ -9,16 +9,17 @@ from config import *
 
 class SystemController(BaseVoiceControllerModule):
     def __init__(self):
-        process = Popen(["pactl", "list", "short", "sinks"], stdout=PIPE)
-        (output, err) = process.communicate()
-        exit_code = process.wait()
-        #if not "bluez_sink.00_15_83_6B_63_41" in output:
-        if not "jongo" in output:
-            print("Couldn't find jongo in pulse audio's sink selection, will fire up pulse audio and then restart mopidy")
-            print output
-            #call(["/home/pi/connectBluetoothAudio.sh"])
-            call(["/home/pi/startPulse.sh"])
-            #call(["sudo", "service", "mopidy", "restart"])
+        if os.name != "nt":
+            process = Popen(["pactl", "list", "short", "sinks"], stdout=PIPE)
+            (output, err) = process.communicate()
+            exit_code = process.wait()
+            #if not "bluez_sink.00_15_83_6B_63_41" in output:
+            if not "jongo" in output:
+                print("Couldn't find jongo in pulse audio's sink selection, will fire up pulse audio and then restart mopidy")
+                print output
+                #call(["/home/pi/connectBluetoothAudio.sh"])
+                call(["/home/pi/startPulse.sh"])
+                #call(["sudo", "service", "mopidy", "restart"])
 
     def should_action(self, keyword, question):
         return "bluetooth" in question or "mopidy" in question or "pulseaudio" in question or "speaker" in question or "pc" in question or "emulation" in question
