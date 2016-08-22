@@ -1,2 +1,6 @@
 PyAudio==0.2.9
 bottle
+pyttsx
+SpeechRecognition
+xbmc-json
+wolframalpha
