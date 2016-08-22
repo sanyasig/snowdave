@@ -10,6 +10,14 @@ class BaseVoiceControllerModule:
     def action(self, keyword, question):
         pass
 
+    def is_my_intent(self, witai, intent):
+        return "intent" in witai["entities"] and len(witai["entities"]["intent"]) > 0 and intent == witai["entities"]["intent"][0]["value"].strip()
+
+    def get_action(self, witai):
+        if "action" in witai["entities"] and len(witai["entities"]["action"]) > 0:
+            return witai["entities"]["action"][0]["value"].strip()
+        return None
+
     def contains_start_word(self, question):
         return any(command in question for command in ["enable", "turn on", "connect", "start"])
 

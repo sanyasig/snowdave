@@ -16,6 +16,8 @@ from tempfile import NamedTemporaryFile
 from io import BytesIO
 import subprocess
 
+from config import *
+
 if os.name != "nt":
     from lib import snowboydecoder
 
@@ -62,6 +64,41 @@ class ResponseLibrary:
     def play_mp3(self, fname):
         subprocess.Popen(['mpg123', '-q', fname]).wait()
 
+def voiceReq(logger, access_token, meth, path, params, **kwargs):
+    full_url = WIT_API_HOST + path
+    logger.debug('%s %s %s', meth, full_url, params)
+    rsp = requests.request(
+        meth,
+        full_url,
+        headers={
+            'authorization': 'Bearer ' + access_token,
+            'accept': 'application/vnd.wit.' + WIT_API_VERSION + '+json',
+            'Content-type': 'audio/wav'
+        },
+        params=params,
+        **kwargs
+    )
+    if rsp.status_code > 200:
+        raise WitError('Wit responded with status: ' + str(rsp.status_code) +
+                       ' (' + rsp.reason + ')')
+    json = rsp.json()
+    if 'error' in json:
+        raise WitError('Wit responded with an error: ' + json['error'])
+
+    logger.debug('%s %s %s', meth, full_url, json)
+    return json
+
+class WitWithVoice(Wit):
+    def voiceMessage(self, audio, verbose=None):
+        audioBytes = audio.get_wav_data()
+        fObj = BytesIO(audioBytes)
+        params = {}
+        if verbose:
+            params['verbose'] = True
+        resp = voiceReq(self.logger, self.access_token, 'POST', '/speech', params, data=fObj)
+        fObj.close()
+        return resp
+
 class VoiceController:
     MODEL = "lib/resources/Alexa.pmdl"
     SENSITIVITY = 0.5
@@ -71,7 +108,14 @@ class VoiceController:
     def __init__(self):
         self.create_detector()
         self.response_library = ResponseLibrary()
-        self.witClient = Wit(access_token="2GZ3OP3K2CIWQNH3W6GJDAEXET63AXUA")
+        #self.witClient = WitWithVoice(access_token=WIT_API_KEY)
+
+        self.recignisor = sr.Recognizer()
+        #Tweak everything to make it fast :D
+        self.recignisor.non_speaking_duration = 0.5
+        self.recignisor.pause_threshold = 0.6
+        self.recignisor.dynamic_energy_threshold = True
+        self.recignisor.energy_threshold = 400
 
         self.modules = []
         for module in modules.__all__:
@@ -93,45 +137,52 @@ class VoiceController:
     def main(self):
         if os.name == "nt":
             while not self.INTERRUPTED:
-                self.process_job(raw_input("Question: "), None)
+                self.process_job(raw_input("Question: "))
             return
 
         # capture SIGINT signal, e.g., Ctrl+C
         signal.signal(signal.SIGINT, self.signal_handler)
         self.response_library.say("Ready")
         while not self.INTERRUPTED:
+            with sr.Microphone() as source:
+                self.recignisor.adjust_for_ambient_noise(source)
             self.FINISHED_PROCESSING_JOB = False
             logging.info("Listening for hotword...")
             self.detector.start(detected_callback=self.listen_for_job, interrupt_check=self.interrupt_callback, sleep_time=0.03)
         self.detector.terminate()
 
     def listen_for_job(self):
-        self.detector.terminate()
-        r = sr.Recognizer()
+        r = self.recignisor
+        #self.detector.terminate()
+        #r = sr.Recognizer()
+
         audio = None
         with sr.Microphone() as source:
-            r.adjust_for_ambient_noise(source)
+            #r.adjust_for_ambient_noise(source)
             logging.info("Listening for main question...")
             self.response_library.ding()
-            audio = r.listen(source)
+            audio = r.listen(source, timeout=5)
             self.response_library.ding(True)
         try:
             logging.info("Sending voice to Google")
-            question = r.recognize_google(audio).lower()
+            #question = r.recognize_google(audio).lower()
+            witResponse = r.recognize_wit(audio, WIT_API_KEY, show_all=True)
+            question = witResponse["_text"].lower()
+            witResponse = witResponse["outcomes"][0]
             logging.info("Google thinks you said: " + question)
             print("Q: " + question)
-            self.process_job(question, audio)
+            self.process_job(question, witResponse, audio)
         except sr.UnknownValueError:
             logging.error("There was a problem whilst processing your question")
-        self.create_detector()
+        #self.create_detector()
         self.FINISHED_PROCESSING_JOB = True
 
 
-    def process_job(self, question, audio):
-        #session_id = uuid.uuid1()
+    def process_job(self, question, witResponse=None, audio=None):
+        #witResponse = self.witClient.message(question) #run_actions(session_id, question)
+        #witResponse = self.witClient.voiceMessage(audio)
+        #print witResponse
 
-        witResponse = self.witClient.message(question) #run_actions(session_id, question)
-        print witResponse
         has_response = False
         for module in self.modules:
             if module.should_action(witResponse, question):
@@ -139,7 +190,7 @@ class VoiceController:
                 try: module.action(witResponse, question)
                 except Exception, e:
                     logging.error(traceback.print_stack())
-                    self.response_library.say("Something went wrong! %s" % e)
+                    self.response_library.say("Something went wrong! %s" % str(e).split("\n")[0])
                 # Potentially don't break here, depends if multiple modules should action something or not?
                 has_response = True
                 break
@@ -147,7 +198,10 @@ class VoiceController:
         if not has_response:
             for module in self.modules:
                 if module.is_catchall:
-                    module.action(witResponse, question, audio)
+                    try: module.action(witResponse, question, audio)
+                    except Exception, e:
+                        logging.error(traceback.print_stack())
+                        self.response_library.say("Something went wrong! %s" % str(e).split("\n")[0])
 
 
 

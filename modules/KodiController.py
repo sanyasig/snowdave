@@ -9,8 +9,8 @@ class KodiController(BaseVoiceControllerModule):
     def __init__(self):
         self.xbmc = XBMC(self.KODI_SERVER + "/jsonrpc")
 
-    def should_action(self, intent, question):
-        return intent["entities"]["intent"][0]["value"].strip() == "kodi"
+    def should_action(self, witai, question):
+        return self.is_my_intent(witai, "kodi")
         #return "kodi" in question or "xbmc" in question
 
     def action(self, intent, question):

@@ -49,6 +49,7 @@ class AlexaController(BaseVoiceControllerModule):
                 ('file', ('audio', fObj, 'audio/L16; rate=16000; channels=1'))
                 ]
         r = requests.post(url, headers=headers, files=files)
+        fObj.close()
         if r.status_code == 200:
             logging.debug("Alexa: Victory is mine!")
             for v in r.headers['content-type'].split(";"):
