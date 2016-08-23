@@ -11,7 +11,7 @@ class BaseVoiceControllerModule:
         pass
 
     def is_my_intent(self, witai, intent):
-        return "intent" in witai["entities"] and len(witai["entities"]["intent"]) > 0 and intent == witai["entities"]["intent"][0]["value"].strip()
+        return witai and "intent" in witai["entities"] and len(witai["entities"]["intent"]) > 0 and intent == witai["entities"]["intent"][0]["value"].strip()
 
     def get_action(self, witai):
         if "action" in witai["entities"] and len(witai["entities"]["action"]) > 0:

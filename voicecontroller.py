@@ -65,76 +65,6 @@ class ResponseLibrary:
     def play_mp3(self, fname):
         subprocess.Popen(['mpg123', '-q', fname]).wait()
 
-def voiceReq(logger, access_token, meth, path, params, **kwargs):
-    full_url = WIT_API_HOST + path
-    logger.debug('%s %s %s', meth, full_url, params)
-    rsp = requests.request(
-        meth,
-        full_url,
-        headers={
-            'authorization': 'Bearer ' + access_token,
-            'accept': 'application/vnd.wit.' + WIT_API_VERSION + '+json',
-            #'Content-type': 'audio/wav',
-            'Content-type': 'audio/raw; encoding=signed-integer; bits=16; rate=8000; endian=little',
-            'Transfer-Encoding': 'chunked',
-        },
-        params=params,
-        **kwargs
-    )
-    if rsp.status_code > 200:
-        raise WitError('Wit responded with status: ' + str(rsp.status_code) +
-                       ' (' + rsp.reason + ')')
-    json = rsp.json()
-    if 'error' in json:
-        raise WitError('Wit responded with an error: ' + json['error'])
-
-    logger.debug('%s %s %s', meth, full_url, json)
-    return json
-
-class WitWithVoice(Wit):
-    def voiceMessage(self, audio, verbose=None):
-        audioBytes = audio.get_wav_data()
-        fObj = BytesIO(audioBytes)
-        params = {}
-        if verbose:
-            params['verbose'] = True
-        resp = voiceReq(self.logger, self.access_token, 'POST', '/speech', params, data=fObj)
-        fObj.close()
-        return resp
-
-    def readFromStream(self, source):
-        assert source.stream is not None, "Audio source must be entered before listening, see documentation for `AudioSource`; are you using `source` outside of a `with` statement?"
-
-        #source.SAMPLE_RATE, source.SAMPLE_WIDTH
-        pause_threshold = 0.6
-        energy_threshold = 400
-        seconds_per_buffer = (source.CHUNK + 0.0) / source.SAMPLE_RATE
-        pause_buffer_count = int(math.ceil(pause_threshold / seconds_per_buffer))
-        buffer = b""
-        completeRecording = b""
-        while True:
-            buffer = source.stream.read(source.CHUNK)
-            completeRecording += buffer
-            if len(buffer) == 0: break # reached end of the stream
-
-            # check if speaking has stopped for longer than the pause threshold on the audio input
-            energy = audioop.rms(buffer, source.SAMPLE_WIDTH) # energy of the audio signal
-            if energy > energy_threshold:
-                pause_count = 0
-            else:
-                pause_count += 1
-            if pause_count > pause_buffer_count: # end of the phrase
-                break
-            yield buffer
-
-        #yield from stream.read()
-
-    def voiceMessageStream(self, source, verbose=None):
-        params = {}
-        if verbose:
-            params['verbose'] = True
-        resp = voiceReq(self.logger, self.access_token, 'POST', '/speech', params, data=self.readFromStream(source), stream=True)
-        return resp
 
 class VoiceController:
     MODEL = "lib/resources/Alexa.pmdl"
@@ -145,7 +75,7 @@ class VoiceController:
     def __init__(self):
         self.create_detector()
         self.response_library = ResponseLibrary()
-        self.witClient = WitWithVoice(access_token=WIT_API_KEY)
+        self.witClient = Wit(access_token=WIT_API_KEY)
 
         self.recignisor = sr.Recognizer()
         #Tweak everything to make it fast :D
@@ -153,6 +83,9 @@ class VoiceController:
         self.recignisor.pause_threshold = 0.6
         self.recignisor.dynamic_energy_threshold = True
         self.recignisor.energy_threshold = 400
+
+        with sr.Microphone() as source:
+            self.recignisor.adjust_for_ambient_noise(source)
 
         self.modules = []
         for module in modules.__all__:
@@ -181,8 +114,6 @@ class VoiceController:
         signal.signal(signal.SIGINT, self.signal_handler)
         self.response_library.say("Ready")
         while not self.INTERRUPTED:
-            with sr.Microphone() as source:
-                self.recignisor.adjust_for_ambient_noise(source)
             self.FINISHED_PROCESSING_JOB = False
             logging.info("Listening for hotword...")
             self.detector.start(detected_callback=self.listen_for_job, interrupt_check=self.interrupt_callback, sleep_time=0.03)
@@ -195,41 +126,26 @@ class VoiceController:
         #r = sr.Recognizer()
 
         audio = None
+
         with sr.Microphone() as source:
-            #r.adjust_for_ambient_noise(source)
             logging.info("Listening for main question...")
             self.response_library.ding()
-            #Do something clever with source.stream
-            #def gen():
-            #for i in range(130):
-            #    yield '%d' % i
-
-            #See: https://github.com/NuanceDev/ndev-python-http-cli/blob/master/bin/asr_stream.py
-            #from scikits.samplerate import resample
-            #rate=44100
-            #desired_sample_rate=8000
-            #desired_rate = float(desired_sample_rate) / rate # desired_sample_rate is an INT. convert to FLOAT for division.
-            #for i in range(0, rate/ASR.chunk_size*record_cap):
-            #    data = stream.read(ASR.chunk_size)
-            #    _raw_data = numpy.fromstring(data, dtype=numpy.int16)
-            #    _resampled_data = resample(_raw_data, desired_rate, "sinc_best").astype(numpy.int16).tostring()
-            #    total_chunks += len(_resampled_data)
-            #    yield _resampled_data
-            
-            #r = requests.post(url, headers = headers, data = gen())
-            #r = requests.post(url, headers = headers, data = self.readFromStream(source.stream))
-            #result = self.witClient.voiceMessageStream(source)
-
-            #See https://github.com/ilar/Wit.Ai-Chunked/blob/master/uploadPyAudio.py for working library
-
             audio = r.listen(source, timeout=5)
             self.response_library.ding(True)
         try:
             logging.info("Sending voice to Google")
-            #question = r.recognize_google(audio).lower()
-            witResponse = r.recognize_wit(audio, WIT_API_KEY, show_all=True)
-            question = witResponse["_text"].lower()
-            witResponse = witResponse["outcomes"][0]
+
+            witResponse = None
+            question = "what is the time"
+            if True:
+                question = r.recognize_google(audio).lower()
+                witResponse = self.witClient.message(question) #run_actions(session_id, question)
+
+                #This was much slower
+                #witResponse = r.recognize_wit(audio, WIT_API_KEY, show_all=True)
+                #question = witResponse["_text"].lower()
+                #witResponse = witResponse["outcomes"][0]
+
             logging.info("Google thinks you said: " + question)
             print("Q: " + question)
             self.process_job(question, witResponse, audio)
@@ -240,10 +156,6 @@ class VoiceController:
 
 
     def process_job(self, question, witResponse=None, audio=None):
-        #witResponse = self.witClient.message(question) #run_actions(session_id, question)
-        #witResponse = self.witClient.voiceMessage(audio)
-        #print witResponse
-
         has_response = False
         for module in self.modules:
             if module.should_action(witResponse, question):

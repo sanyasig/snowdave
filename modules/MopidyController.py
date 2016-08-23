@@ -24,7 +24,7 @@ class MopidyController(BaseVoiceControllerModule):
             #Should handle: 'play me the ashley playlist' and 'music playlist bob'
             searchFor = filter(None, filter(None, question.replace("music ", "").split("playlist"))[0].split("play me"))[0].split("play")[0].replace("the", "").strip()
             self.play_playlist(name=searchFor)
-        elif "some" in question:
+        elif "some" in question and not "some music" in question:
             self.response.say("Playing Genre")
             searchFor = filter(None, question.replace(" music", "").split("play me some"))[0].strip()
             self.search_by_genre(searchFor)

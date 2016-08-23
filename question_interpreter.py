@@ -1,23 +1,20 @@
-import pyttsx
-import signal
-#from pydub import AudioSegment
 import speech_recognition as sr
 import logging
-import os
-import traceback
 
-import modules
-from modules import *
 from wit import Wit
+import pyaudio
+import math
 import requests
 import audioop
 
-from gtts import gTTS
-from tempfile import NamedTemporaryFile
 from io import BytesIO
-import subprocess
-
 from config import *
+
+WIT_API_HOST = os.getenv('WIT_URL', 'https://api.wit.ai')
+WIT_API_VERSION = os.getenv('WIT_API_VERSION', '20160516')
+
+class WitError(Exception):
+    pass
 
 def voiceReq(logger, access_token, meth, path, params, **kwargs):
     full_url = WIT_API_HOST + path
@@ -46,7 +43,7 @@ def voiceReq(logger, access_token, meth, path, params, **kwargs):
     return json
 
 class WitWithVoice(Wit):
-    self.completeRecording = b""
+    completeRecording = b""
 
     def get_most_recent_recording(self):
         SAMPLE_WIDTH = pyaudio.get_sample_size(pyaudio.paInt16)
@@ -76,6 +73,8 @@ class WitWithVoice(Wit):
 
         foundAnyAudioYet = False
         elapsed_time = 0
+        pause_count = 0
+        print "Reading from stream"
         while True:
             elapsed_time += seconds_per_buffer
             if elapsed_time > 5: # handle timeout if specified
@@ -96,6 +95,7 @@ class WitWithVoice(Wit):
             yield buffer
 
         #yield from stream.read()
+        print "Finished recording"
 
     def voiceMessageStream(self, source, verbose=None):
         params = {}
@@ -118,12 +118,12 @@ class QuestionInterpreter:
         r = self.recignisor
 
         audio = None
-        with sr.Microphone() as source:
+        with sr.Microphone(sample_rate = 8000, chunk_size = 4096) as source:
             logging.info("Listening for main question...")
             witResponse = self.witClient.voiceMessageStream(source)
-            print witResponse
+            print "Got response from WIT"
             audio = self.witClient.get_most_recent_recording()
-            print "Got audio"
+            print witResponse
 
             #See https://github.com/ilar/Wit.Ai-Chunked/blob/master/uploadPyAudio.py for working library
             #audio = r.listen(source, timeout=5)
@@ -131,7 +131,6 @@ class QuestionInterpreter:
         #question = r.recognize_google(audio).lower()
         #witResponse = r.recognize_wit(audio, WIT_API_KEY, show_all=True)
         question = witResponse["_text"].lower()
-        witResponse = witResponse["outcomes"][0]
         logging.info("Interpreter thinks you said: " + question)
         print("Q: " + question)
         return (question, witResponse, audio)
