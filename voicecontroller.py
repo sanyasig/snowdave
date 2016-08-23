@@ -10,6 +10,7 @@ import modules
 from modules import *
 from wit import Wit
 import requests
+import audioop
 
 from gtts import gTTS
 from tempfile import NamedTemporaryFile
@@ -73,7 +74,9 @@ def voiceReq(logger, access_token, meth, path, params, **kwargs):
         headers={
             'authorization': 'Bearer ' + access_token,
             'accept': 'application/vnd.wit.' + WIT_API_VERSION + '+json',
-            'Content-type': 'audio/wav'
+            #'Content-type': 'audio/wav',
+            'Content-type': 'audio/raw; encoding=signed-integer; bits=16; rate=8000; endian=little',
+            'Transfer-Encoding': 'chunked',
         },
         params=params,
         **kwargs
@@ -99,6 +102,40 @@ class WitWithVoice(Wit):
         fObj.close()
         return resp
 
+    def readFromStream(self, source):
+        assert source.stream is not None, "Audio source must be entered before listening, see documentation for `AudioSource`; are you using `source` outside of a `with` statement?"
+
+        #source.SAMPLE_RATE, source.SAMPLE_WIDTH
+        pause_threshold = 0.6
+        energy_threshold = 400
+        seconds_per_buffer = (source.CHUNK + 0.0) / source.SAMPLE_RATE
+        pause_buffer_count = int(math.ceil(pause_threshold / seconds_per_buffer))
+        buffer = b""
+        completeRecording = b""
+        while True:
+            buffer = source.stream.read(source.CHUNK)
+            completeRecording += buffer
+            if len(buffer) == 0: break # reached end of the stream
+
+            # check if speaking has stopped for longer than the pause threshold on the audio input
+            energy = audioop.rms(buffer, source.SAMPLE_WIDTH) # energy of the audio signal
+            if energy > energy_threshold:
+                pause_count = 0
+            else:
+                pause_count += 1
+            if pause_count > pause_buffer_count: # end of the phrase
+                break
+            yield buffer
+
+        #yield from stream.read()
+
+    def voiceMessageStream(self, source, verbose=None):
+        params = {}
+        if verbose:
+            params['verbose'] = True
+        resp = voiceReq(self.logger, self.access_token, 'POST', '/speech', params, data=self.readFromStream(source), stream=True)
+        return resp
+
 class VoiceController:
     MODEL = "lib/resources/Alexa.pmdl"
     SENSITIVITY = 0.5
@@ -108,7 +145,7 @@ class VoiceController:
     def __init__(self):
         self.create_detector()
         self.response_library = ResponseLibrary()
-        #self.witClient = WitWithVoice(access_token=WIT_API_KEY)
+        self.witClient = WitWithVoice(access_token=WIT_API_KEY)
 
         self.recignisor = sr.Recognizer()
         #Tweak everything to make it fast :D
@@ -151,6 +188,7 @@ class VoiceController:
             self.detector.start(detected_callback=self.listen_for_job, interrupt_check=self.interrupt_callback, sleep_time=0.03)
         self.detector.terminate()
 
+
     def listen_for_job(self):
         r = self.recignisor
         #self.detector.terminate()
@@ -161,6 +199,29 @@ class VoiceController:
             #r.adjust_for_ambient_noise(source)
             logging.info("Listening for main question...")
             self.response_library.ding()
+            #Do something clever with source.stream
+            #def gen():
+            #for i in range(130):
+            #    yield '%d' % i
+
+            #See: https://github.com/NuanceDev/ndev-python-http-cli/blob/master/bin/asr_stream.py
+            #from scikits.samplerate import resample
+            #rate=44100
+            #desired_sample_rate=8000
+            #desired_rate = float(desired_sample_rate) / rate # desired_sample_rate is an INT. convert to FLOAT for division.
+            #for i in range(0, rate/ASR.chunk_size*record_cap):
+            #    data = stream.read(ASR.chunk_size)
+            #    _raw_data = numpy.fromstring(data, dtype=numpy.int16)
+            #    _resampled_data = resample(_raw_data, desired_rate, "sinc_best").astype(numpy.int16).tostring()
+            #    total_chunks += len(_resampled_data)
+            #    yield _resampled_data
+            
+            #r = requests.post(url, headers = headers, data = gen())
+            #r = requests.post(url, headers = headers, data = self.readFromStream(source.stream))
+            #result = self.witClient.voiceMessageStream(source)
+
+            #See https://github.com/ilar/Wit.Ai-Chunked/blob/master/uploadPyAudio.py for working library
+
             audio = r.listen(source, timeout=5)
             self.response_library.ding(True)
         try:
