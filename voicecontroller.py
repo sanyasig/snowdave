@@ -4,6 +4,7 @@ import signal
 import speech_recognition as sr
 import logging
 import os
+import sys
 import traceback
 
 import modules
@@ -112,7 +113,8 @@ class VoiceController:
 
         # capture SIGINT signal, e.g., Ctrl+C
         signal.signal(signal.SIGINT, self.signal_handler)
-        self.response_library.say("Ready")
+        if not "noready" in sys.argv:
+            self.response_library.say("Ready")
         while not self.INTERRUPTED:
             self.FINISHED_PROCESSING_JOB = False
             logging.info("Listening for hotword...")
