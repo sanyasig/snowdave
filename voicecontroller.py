@@ -81,13 +81,12 @@ class VoiceController:
 
         self.recignisor = sr.Recognizer()
         #Tweak everything to make it fast :D
-        self.recignisor.non_speaking_duration = 0.5
-        self.recignisor.pause_threshold = 0.6
+        self.recignisor.non_speaking_duration = 0.4
+        self.recignisor.pause_threshold = 0.5
+        self.recignisor.energy_threshold = 2500
         self.recignisor.dynamic_energy_threshold = True
-        self.recignisor.energy_threshold = 400
 
-        with self.get_microphone() as source:
-            self.recignisor.adjust_for_ambient_noise(source)
+        self.adjust_for_ambient(2)
 
         self.modules = []
         for module in modules.__all__:
@@ -95,6 +94,11 @@ class VoiceController:
             moduleInstance = eval(module + "." + module + "()")
             moduleInstance.set_response_library(self.response_library)
             self.modules.append(moduleInstance)
+
+    def adjust_for_ambient(self, time=0.5):
+        #return #Temp disabled
+        with self.get_microphone() as source:
+            self.recignisor.adjust_for_ambient_noise(source, time)
 
     def get_microphone(self):
         #Force using PS3 Eye camera mic
@@ -143,14 +147,15 @@ class VoiceController:
         with self.get_microphone() as source:
             logging.info("Listening for main question...")
             self.response_library.ding()
-            audio = self.recignisor.listen(source, timeout=5)
-            self.response_library.ding(True)
-        try:
-            logging.info("Sending voice to Google")
+            try:
+                audio = self.recignisor.listen(source, timeout=5)
+                self.response_library.ding(True)
+            except sr.WaitTimeoutError: self.response_library.say("Sorry I didn't hear anything")
 
-            witResponse = None
-            question = "what is the time"
-            if True:
+        if audio:
+            try:
+                logging.info("Sending voice to Google")
+
                 question = self.recignisor.recognize_google(audio).lower()
                 witResponse = self.witClient.message(question) #run_actions(session_id, question)
 
@@ -159,11 +164,13 @@ class VoiceController:
                 #question = witResponse["_text"].lower()
                 #witResponse = witResponse["outcomes"][0]
 
-            logging.info("Google thinks you said: " + question)
-            print("Q: " + question)
-            self.process_job(question, witResponse, audio)
-        except self.recignisor.UnknownValueError:
-            logging.error("There was a problem whilst processing your question")
+                logging.info("Google thinks you said: " + question)
+                print("Q: " + question)
+                self.process_job(question, witResponse, audio)
+            except sr.UnknownValueError, e:
+                logging.error("There was a problem whilst processing your question")
+                logging.error(traceback.print_stack())
+                self.response_library.say("There was a problem whilst processing your question")
         self.create_detector()
         self.FINISHED_PROCESSING_JOB = True
 
@@ -190,8 +197,7 @@ class VoiceController:
                         logging.error(traceback.print_stack())
                         self.response_library.say("Something went wrong! %s" % str(e).split("\n")[0])
 
-        with self.get_microphone() as source:
-            self.recignisor.adjust_for_ambient_noise(source)
+        self.adjust_for_ambient()
         self.response_library.ding(True)
 
 
