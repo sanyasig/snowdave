@@ -64,7 +64,8 @@ class ResponseLibrary:
         f.close()
 
     def play_mp3(self, fname):
-        subprocess.Popen(['mpg123', '-q', fname]).wait()
+        #Force using pulse audio
+        subprocess.Popen(['mpg123', '-o', 'pulse', '-q', fname]).wait()
 
 
 class VoiceController:
@@ -85,7 +86,7 @@ class VoiceController:
         self.recignisor.dynamic_energy_threshold = True
         self.recignisor.energy_threshold = 400
 
-        with sr.Microphone() as source:
+        with self.get_microphone() as source:
             self.recignisor.adjust_for_ambient_noise(source)
 
         self.modules = []
@@ -94,6 +95,19 @@ class VoiceController:
             moduleInstance = eval(module + "." + module + "()")
             moduleInstance.set_response_library(self.response_library)
             self.modules.append(moduleInstance)
+
+    def get_microphone(self):
+        #Force using PS3 Eye camera mic
+        m = sr.Microphone() #Have to make an object before u can then inspect others, coz, no reason . . .
+        mics = m.list_microphone_names()
+        index = 0
+        for i in range(0, len(mics)):
+            logging.debug("Available mic: %s" % mics[i])
+            if mics[i].startswith("pulse"): #USB Camera-B4.09.24.1: Audio
+                logging.debug("Using mic: %s" % mics[i])
+                index = i
+                break
+        return sr.Microphone(i, sample_rate = 16000, chunk_size = 1024)
 
     def create_detector(self):
         if os.name != "nt":
@@ -123,16 +137,13 @@ class VoiceController:
 
 
     def listen_for_job(self):
-        r = self.recignisor
-        #self.detector.terminate()
-        #r = sr.Recognizer()
-
+        self.detector.terminate()
         audio = None
 
-        with sr.Microphone() as source:
+        with self.get_microphone() as source:
             logging.info("Listening for main question...")
             self.response_library.ding()
-            audio = r.listen(source, timeout=5)
+            audio = self.recignisor.listen(source, timeout=5)
             self.response_library.ding(True)
         try:
             logging.info("Sending voice to Google")
@@ -140,7 +151,7 @@ class VoiceController:
             witResponse = None
             question = "what is the time"
             if True:
-                question = r.recognize_google(audio).lower()
+                question = self.recignisor.recognize_google(audio).lower()
                 witResponse = self.witClient.message(question) #run_actions(session_id, question)
 
                 #This was much slower
@@ -151,9 +162,9 @@ class VoiceController:
             logging.info("Google thinks you said: " + question)
             print("Q: " + question)
             self.process_job(question, witResponse, audio)
-        except sr.UnknownValueError:
+        except self.recignisor.UnknownValueError:
             logging.error("There was a problem whilst processing your question")
-        #self.create_detector()
+        self.create_detector()
         self.FINISHED_PROCESSING_JOB = True
 
 
@@ -173,10 +184,15 @@ class VoiceController:
         if not has_response:
             for module in self.modules:
                 if module.is_catchall:
+                    self.response_library.ding(True)
                     try: module.action(witResponse, question, audio)
                     except Exception, e:
                         logging.error(traceback.print_stack())
                         self.response_library.say("Something went wrong! %s" % str(e).split("\n")[0])
+
+        with self.get_microphone() as source:
+            self.recignisor.adjust_for_ambient_noise(source)
+        self.response_library.ding(True)
 
 
 
