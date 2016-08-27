@@ -86,8 +86,6 @@ class VoiceController:
         self.recignisor.energy_threshold = 2500
         self.recignisor.dynamic_energy_threshold = True
 
-        self.adjust_for_ambient(2)
-
         self.modules = []
         for module in modules.__all__:
             logging.info("Loading module: " + module)
@@ -105,7 +103,7 @@ class VoiceController:
     def adjust_for_ambient(self, time=0.5):
         #return #Temp disabled
         with self.get_microphone() as source:
-            self.recignisor.adjust_for_ambient_noise(source, time)
+
 
     def get_microphone(self):
         #Force using PS3 Eye camera mic
@@ -154,6 +152,7 @@ class VoiceController:
         with self.get_microphone() as source:
             logging.info("Listening for main question...")
             self.response_library.ding()
+            self.recignisor.adjust_for_ambient_noise(source, 0.5)
             try:
                 audio = self.recignisor.listen(source, timeout=5)
                 self.response_library.ding(True)
