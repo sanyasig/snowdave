@@ -7,6 +7,8 @@ import os
 import sys
 import traceback
 
+import wolframalpha
+
 import modules
 from modules import *
 from wit import Wit
@@ -73,11 +75,15 @@ class VoiceController:
     SENSITIVITY = 0.5
     INTERRUPTED = False
     FINISHED_PROCESSING_JOB = True
+    WOLFRAM_ALPHA_KEY = "QQG9XK-5HQA4Q3257"
+    WIT_AI_KEY = "AWA3HYBQZ7YMCAZD7WRMHISDQAZWVXTN"
     
     def __init__(self):
         self.create_detector()
         self.response_library = ResponseLibrary()
-        self.witClient = Wit(access_token="AWA3HYBQZ7YMCAZD7WRMHISDQAZWVXTN", actions=self.witActions)
+        self.analiser = Wit(access_token=self.WIT_AI_KEY, actions=self.witActions)
+        self.wolfram_client = wolframalpha.Client(self.WOLFRAM_ALPHA_KEY)
+
 
         self.recignisor = sr.Recognizer()
         #Tweak everything to make it fast :D
