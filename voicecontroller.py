@@ -101,17 +101,7 @@ class VoiceController:
     }
 
     def get_microphone(self):
-        #Force using PS3 Eye camera mic
-        m = sr.Microphone() #Have to make an object before u can then inspect others, coz, no reason . . .
-        mics = m.list_microphone_names()
-        index = 0
-        for i in range(0, len(mics)):
-            logging.debug("Available mic: %s" % mics[i])
-            if mics[i].startswith("pulse"): #USB Camera-B4.09.24.1: Audio
-                logging.debug("Using mic: %s" % mics[i])
-                index = i
-                break
-        return sr.Microphone(i, sample_rate = 16000, chunk_size = 1024)
+         return sr.Microphone()
 
     def create_detector(self):
             self.detector = snowboydecoder.HotwordDetector(self.MODEL, resource="lib/resources/common.res", sensitivity=self.SENSITIVITY)
@@ -147,7 +137,7 @@ class VoiceController:
         with self.get_microphone() as source:
             logging.info("Listening for main question...")
             self.response_library.ding()
-            self.recignisor.adjust_for_ambient_noise(source, 0.5)
+            self.recignisor.adjust_for_ambient_noise(source)
             try:
                 audio = self.recignisor.listen(source, timeout=5)
                 self.response_library.ding(True)
@@ -199,7 +189,7 @@ class VoiceController:
                         self.response_library.say("Something went wrong! %s" % str(e).split("\n")[0])
 
         self.adjust_for_ambient()
-        self.response_library.ding(True)
+        self.response_lizbrary.ding(True)
 
 
 
