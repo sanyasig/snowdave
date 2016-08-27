@@ -77,7 +77,7 @@ class VoiceController:
     def __init__(self):
         self.create_detector()
         self.response_library = ResponseLibrary()
-        self.witClient = Wit(access_token=WIT_API_KEY)
+        self.witClient = Wit(access_token="AWA3HYBQZ7YMCAZD7WRMHISDQAZWVXTN", actions=self.witActions)
 
         self.recignisor = sr.Recognizer()
         #Tweak everything to make it fast :D
@@ -94,6 +94,13 @@ class VoiceController:
             moduleInstance = eval(module + "." + module + "()")
             moduleInstance.set_response_library(self.response_library)
             self.modules.append(moduleInstance)
+
+    def send(self, request, response):
+        print('Sending to user...', response['text'])
+
+    witActions = {
+        'send': send,
+    }
 
     def adjust_for_ambient(self, time=0.5):
         #return #Temp disabled
@@ -114,8 +121,8 @@ class VoiceController:
         return sr.Microphone(i, sample_rate = 16000, chunk_size = 1024)
 
     def create_detector(self):
-        if os.name != "nt":
             self.detector = snowboydecoder.HotwordDetector(self.MODEL, resource="lib/resources/common.res", sensitivity=self.SENSITIVITY)
+            self.detector.start(detected_callback=self.listen_for_job, interrupt_check=self.interrupt_callback, sleep_time=0.03)
 
     def signal_handler(self, signal, frame):
         self.INTERRUPTED = True
