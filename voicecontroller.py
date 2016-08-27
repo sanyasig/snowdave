@@ -100,11 +100,6 @@ class VoiceController:
         'send': send,
     }
 
-    def adjust_for_ambient(self, time=0.5):
-        #return #Temp disabled
-        with self.get_microphone() as source:
-
-
     def get_microphone(self):
         #Force using PS3 Eye camera mic
         m = sr.Microphone() #Have to make an object before u can then inspect others, coz, no reason . . .
