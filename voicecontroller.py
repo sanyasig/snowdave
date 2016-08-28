@@ -119,7 +119,7 @@ class VoiceController:
         return self.INTERRUPTED or self.FINISHED_PROCESSING_JOB
 
     def main(self):
-        witResponse = self.witClient.message("what time is it ")
+        witResponse = self.witClient.message("turn tv on")
         self.process_job("what time is it",  witResponse)
 
         if os.name == "nt":
@@ -175,6 +175,7 @@ class VoiceController:
 
 
     def process_job(self, question, witResponse=None, audio=None):
+        print (witResponse)
         has_response = False
         for module in self.modules:
             if module.should_action(witResponse, question):
@@ -187,17 +188,16 @@ class VoiceController:
                 has_response = True
                 break
 
-        if not has_response:
-            for module in self.modules:
-                if module.is_catchall:
-                    self.response_library.ding(True)
-                    try: module.action(witResponse, question, audio)
-                    except Exception, e:
-                        logging.error(traceback.print_stack())
-                        self.response_library.say("Something went wrong! %s" % str(e).split("\n")[0])
+        # if not has_response:
+        #     for module in self.modules:
+        #         if module.is_catchall:
+        #             self.response_library.ding(True)
+        #             try: module.action(witResponse, question, audio)
+        #             except Exception, e:
+        #                 logging.error(traceback.print_stack())
+        #                 self.response_library.say("Something went wrong! %s" % str(e).split("\n")[0])
 
-        self.adjust_for_ambient()
-        self.response_lizbrary.ding(True)
+        self.response_library.ding(True)
 
 
 
