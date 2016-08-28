@@ -6,9 +6,10 @@ import pyaudio
 import math
 import requests
 import audioop
+import json
 
+import os
 from io import BytesIO
-from config import *
 
 WIT_API_HOST = os.getenv('WIT_URL', 'https://api.wit.ai')
 WIT_API_VERSION = os.getenv('WIT_API_VERSION', '20160516')
@@ -105,8 +106,8 @@ class WitWithVoice(Wit):
         return resp
 
 class QuestionInterpreter:
-    def __init__(self):
-        self.witClient = WitWithVoice(access_token=WIT_API_KEY)
+    def __init__(self, wit_api_key):
+        self.witClient = WitWithVoice(access_token=wit_api_key)
         self.recignisor = sr.Recognizer()
         #Tweak everything to make it fast :D
         self.recignisor.non_speaking_duration = 0.5
@@ -138,5 +139,7 @@ class QuestionInterpreter:
 
 if __name__ == "__main__":
     import setup_logging
-    qi = QuestionInterpreter()
+    with open('config.json') as data_file:    
+        data = json.load(data_file)
+    qi = QuestionInterpreter(data["main"]["WIT_API_KEY"])
     (question, witResponse, audio) = qi.get_question_from_mic()

@@ -6,6 +6,7 @@ import logging
 import os
 import sys
 import traceback
+import json
 
 import modules
 from modules import *
@@ -17,8 +18,6 @@ from gtts import gTTS
 from tempfile import NamedTemporaryFile
 from io import BytesIO
 import subprocess
-
-from config import *
 
 if os.name != "nt":
     from lib import snowboydecoder
@@ -75,9 +74,12 @@ class VoiceController:
     FINISHED_PROCESSING_JOB = True
     
     def __init__(self):
+        with open('config.json') as data_file:    
+            config = json.load(data_file)
+        
         self.create_detector()
         self.response_library = ResponseLibrary()
-        self.witClient = Wit(access_token=WIT_API_KEY)
+        self.witClient = Wit(access_token=config["main"]["WIT_API_KEY"])
 
         self.recignisor = sr.Recognizer()
         #Tweak everything to make it fast :D
@@ -92,6 +94,8 @@ class VoiceController:
         for module in modules.__all__:
             logging.info("Loading module: " + module)
             moduleInstance = eval(module + "." + module + "()")
+            if module in config["modules"]:
+                moduleInstance.set_config(config["modules"][module])
             moduleInstance.set_response_library(self.response_library)
             self.modules.append(moduleInstance)
 

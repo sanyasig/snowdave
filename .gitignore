@@ -2,3 +2,4 @@
 nohup.out
 /token_cache.txt
 /*.log
+/config.json

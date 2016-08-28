@@ -4,8 +4,7 @@ from subprocess import Popen, PIPE, call
 import subprocess
 import socket
 import struct
-
-from config import *
+import os
 
 class SystemController(BaseVoiceControllerModule):
     def __init__(self):
@@ -28,21 +27,17 @@ class SystemController(BaseVoiceControllerModule):
     def action(self, keyword, question):
         if "wake" in question:
             self.response.say("Waking Ash's PC")
-            self.wake_on_lan("10:BF:48:88:FA:99")
+            self.wake_on_lan(self.config["pc"]["mac"])
         elif "shutdown" in question or "shut down" in question:
             self.response.say("Shutting down Ash's PC")
-            self.shutdown_windows_on_lan("Ash-PC", "Ash", windows_password)
+            self.shutdown_windows_on_lan(self.config["pc"]["host"], self.config["pc"]["user"])
         elif "speaker" in question:
-            if "bathroom" in question:
-                self.change_speaker("jongos3bathroom_dlna")
-            elif "kitchen" in question:
-                self.change_speaker("jongos3kitchen_dlna")
-            elif "bedroom" in question:
-                self.change_speaker("jongos3bedroom_dlna")
-            elif "house" in question:
-                self.change_speaker("bluez_sink.00_15_83_6B_63_41")
-            else:
-                self.change_speaker("jongos3playroom_dlna")
+            chosenSpeaker = self.config["speakers"]["default"]
+            for option in self.config["speakers"]:
+                if option in question:
+                    chosenSpeaker = self.config["speakers"][option]
+                    break
+            self.change_speaker(chosenSpeaker)
         elif "emulation" in question:
             if self.contains_stop_word(question):
                 self.stop_emulationstation()
@@ -70,7 +65,7 @@ class SystemController(BaseVoiceControllerModule):
     def connect_bluetooth(self):
         process = Popen(["/home/pi/connectBluetoothAudio.sh"], stdout=PIPE)
         process.wait()
-        self.change_speaker("bluez_sink.00_15_83_6B_63_41")
+        self.change_speaker(self.config["bluetooth"]["default"])
 
     def connect_pulseaudio(self):
         call(["/home/pi/startPulse.sh"])
@@ -113,6 +108,6 @@ class SystemController(BaseVoiceControllerModule):
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
         sock.sendto(send_data, ('<broadcast>', 7))
 
-    def shutdown_windows_on_lan(self, host, user, pasword):
+    def shutdown_windows_on_lan(self, host, user):
         #call(["net", "rpc", "shutdown", "-I", host, "-U", user+"%"+windows_password])
         call(["ssh", "-l", user, host, "shutdown", "/h"])

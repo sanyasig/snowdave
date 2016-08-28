@@ -6,7 +6,6 @@ import time
 import re
 import os
 
-from config import *
 from tempfile import NamedTemporaryFile
 from io import BytesIO
 import stat
@@ -76,12 +75,12 @@ class AlexaController(BaseVoiceControllerModule):
             fObj = open(token_cache_fname, "r")
             token = fObj.read()
             fObj.close()
-        refresh = refresh_token
+        refresh = self.config["refresh_token"]
         if token:
             logging.debug("I have a cached token: %s" % token)
             return token
         elif refresh:
-            payload = {"client_id" : Client_ID, "client_secret" : Client_Secret, "refresh_token" : refresh, "grant_type" : "refresh_token", }
+            payload = {"client_id" : self.config["Client_ID"], "client_secret" : self.config["Client_Secret"], "refresh_token" : refresh, "grant_type" : "refresh_token", }
             url = "https://api.amazon.com/auth/o2/token"
             r = requests.post(url, data = payload)
             print "GOT A NEW TOKEN"

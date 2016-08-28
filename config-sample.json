@@ -1,0 +1,34 @@
+{
+    "main": {
+        "WIT_API_KEY": "2GZ3OP3K2CIWQNH3W6GJDAEXET63AXUA"
+    },
+    "modules": {
+        "AlexaController": {
+            "ProductID": "XXX",
+            "Security_Profile_Description": "XXX",
+            "Security_Profile_ID": "XXX",
+            "Client_ID": "XXX",
+            "Client_Secret": "XXX",
+            "refresh_token": "XXX"
+        },
+        "SystemController": {
+            "pc": {
+                "mac": "XXX",
+                "host": "XXX",
+                "user": "XXX"
+            },
+            "speakers": {
+                "default":  "speaker_name_in_pulse",
+                "bathroom": "XXX",
+                "shower":   "XXX",
+                "kitchen":  "XXX",
+                "bedroom":  "XXX",
+                "house":    "XXX"
+            },
+            "bluetooth": {
+                "default": "speaker_name_in_pulse"
+            }
+        }
+    }
+    
+}

@@ -4,6 +4,9 @@ class BaseVoiceControllerModule:
     def set_response_library(self, library):
         self.response = library
 
+    def set_config(self, config_json):
+        self.config = config_json
+
     def should_action(self, keyword, question):
         return False
 
