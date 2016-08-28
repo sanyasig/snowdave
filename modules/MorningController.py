@@ -1,10 +1,11 @@
 from BaseVoiceControllerModule import BaseVoiceControllerModule
 
-class TvController(BaseVoiceControllerModule):
+class MorningController(BaseVoiceControllerModule):
 
-    def should_action(self, entities, keyword):
-       return self.checkDoAction(entities, "tv")
+    def should_action(self, entities, question):
+        return ("good morning" in question)
 
     def action(self, entities, question):
         if(self.hasValidIntent(entities)):
             pass
+

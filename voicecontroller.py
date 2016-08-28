@@ -92,6 +92,7 @@ class VoiceController:
         self.recignisor.dynamic_energy_threshold = True
 
         self.modules = []
+
         for module in modules.__all__:
             logging.info("Loading module: " + module)
             moduleInstance = eval(module + "." + module + "()")
@@ -119,8 +120,8 @@ class VoiceController:
         return self.INTERRUPTED or self.FINISHED_PROCESSING_JOB
 
     def main(self):
-        witResponse = self.witClient.message("turn tv on")
-        self.process_job("what time is it",  witResponse)
+        witResponse = self.witClient.message("good morning")
+        self.process_job("good morning",  witResponse)
 
         if os.name == "nt":
             while not self.INTERRUPTED:
@@ -176,11 +177,13 @@ class VoiceController:
 
     def process_job(self, question, witResponse=None, audio=None):
         print (witResponse)
+        entities = witResponse['entities']
         has_response = False
         for module in self.modules:
-            if module.should_action(witResponse, question):
+           if module.should_action(entities, question):
                 self.response_library.ding(True)
-                try: module.action(witResponse, question)
+                try:
+                    module.action(entities, question)
                 except Exception, e:
                     logging.error(traceback.print_stack())
                     self.response_library.say("Something went wrong! %s" % str(e).split("\n")[0])
