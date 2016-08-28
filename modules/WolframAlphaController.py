@@ -19,3 +19,6 @@ class WolframAlphaController(BaseVoiceControllerModule):
                 answer = pod.text.encode("ascii", "ignore")
                 self.response.say(answer)
 
+
+
+

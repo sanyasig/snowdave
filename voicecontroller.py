@@ -81,8 +81,7 @@ class VoiceController:
     def __init__(self):
         self.create_detector()
         self.response_library = ResponseLibrary()
-        self.analiser = Wit(access_token=self.WIT_AI_KEY, actions=self.witActions)
-        self.wolfram_client = wolframalpha.Client(self.WOLFRAM_ALPHA_KEY)
+        self.witClient = Wit(access_token=self.WIT_AI_KEY, actions=self.witActions)
 
 
         self.recignisor = sr.Recognizer()
@@ -120,6 +119,9 @@ class VoiceController:
         return self.INTERRUPTED or self.FINISHED_PROCESSING_JOB
 
     def main(self):
+        witResponse = self.witClient.message("what time is it ")
+        self.process_job("what time is it",  witResponse)
+
         if os.name == "nt":
             while not self.INTERRUPTED:
                 self.process_job(raw_input("Question: "))
