@@ -10,6 +10,7 @@ import traceback
 import wolframalpha
 
 import modules
+from SnowDaveListner import SnowDaveListner
 from modules import *
 from wit import Wit
 import requests
@@ -84,7 +85,7 @@ class VoiceController:
         self.witClient = Wit(access_token=self.WIT_AI_KEY, actions=self.witActions)
 
 
-        self.recignisor = sr.Recognizer()
+        self.recignisor = SnowDaveListner()
         #Tweak everything to make it fast :D
         self.recignisor.non_speaking_duration = 0.4
         self.recignisor.pause_threshold = 0.5
