@@ -176,7 +176,8 @@ class VoiceController:
 
 
     def process_job(self, question, witResponse=None, audio=None):
-        print (witResponse)
+        self.printMessage(question)
+        self.printMessage(witResponse)
         entities = witResponse['entities']
         has_response = False
         for module in self.modules:
@@ -202,6 +203,13 @@ class VoiceController:
 
         self.response_library.ding(True)
 
+
+    def printMessage(self, message):
+        print "******************************************************"
+        print "    **********************************************     "
+        print message
+        print "    **********************************************     "
+        print "****************************************************** "
 
 
 
