@@ -25,31 +25,36 @@ class SystemController(BaseVoiceControllerModule):
         #return "enable" in question or "disable" in question or "turn on" in question or "turn off" in question or "connect" in question or "restart" in question
 
     def action(self, keyword, question):
-        if "wake" in question:
-            self.response.say("Waking Ash's PC")
-            self.wake_on_lan(self.config["pc"]["mac"])
-        elif "shutdown" in question or "shut down" in question:
-            self.response.say("Shutting down Ash's PC")
-            self.shutdown_windows_on_lan(self.config["pc"]["host"], self.config["pc"]["user"])
-        elif "speaker" in question:
+        intent = self.get_witai_item(witai, "intent")
+        action = self.get_witai_item(witai, "action")
+        search_query = self.get_witai_item(witai, "search_query")
+
+        if "pc" in intent:
+            if "shutdown" in action:
+                self.response.say("Shutting down Ash's PC")
+                self.shutdown_windows_on_lan(self.config["pc"]["host"], self.config["pc"]["user"])
+            else:
+                self.response.say("Waking Ash's PC")
+                self.wake_on_lan(self.config["pc"]["mac"])
+        elif "speaker" in intent:
             chosenSpeaker = self.config["speakers"]["default"]
             for option in self.config["speakers"]:
-                if option in question:
+                if option in search_query:
                     chosenSpeaker = self.config["speakers"][option]
                     break
             self.change_speaker(chosenSpeaker)
-        elif "emulation" in question:
-            if self.contains_stop_word(question):
+        elif "emulation" in intent:
+            if self.contains_stop_word(action):
                 self.stop_emulationstation()
             else:
                 self.start_emulationstation()
-        elif "mopidy" in question:
-            if "restart" in question:
+        elif "mopidy" in intent:
+            if "restart" in action:
                 self.restart_mopidy()
-        elif "bluetooth" in question:
-            if "disconnect" in question or "stop" in question or "disable" in question or "off" in question:
+        elif "bluetooth" in intent:
+            if self.contains_stop_word(action):
                 self.disconnect_bluetooth()
-            elif "connect" in question or "start" in question or "enable" in question or "on" in question:
+            else:
                 self.connect_bluetooth()
         elif "pulseaudio" in question or "pulse" in question:
             if "restart" in question:

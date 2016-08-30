@@ -14,6 +14,7 @@ class AlexaController(BaseVoiceControllerModule):
     is_catchall = True
 
     def should_action(self, keyword, question):
+        return self.get_witai_item(witai, "intent") in ["time", "joke", "weather"]
         return False
 
     def action(self, keyword, question, audioData):

@@ -11,15 +11,16 @@ class BaseVoiceControllerModule:
         return False
 
     def action(self, keyword, question):
-        pass
+        raise Exception("I need overwriting")
 
     def is_my_intent(self, witai, intent):
-        return witai and "intent" in witai["entities"] and len(witai["entities"]["intent"]) > 0 and intent == witai["entities"]["intent"][0]["value"].strip()
+        return self.get_witai_item(witai, "intent") == intent
 
-    def get_action(self, witai):
-        if "action" in witai["entities"] and len(witai["entities"]["action"]) > 0:
-            return witai["entities"]["action"][0]["value"].strip()
-        return None
+    def is_my_action(self, witai, action):
+        return self.get_witai_item(witai, "action") == action
+
+    def get_witai_item(self, witai, item):
+        return witai["entities"][item][0]["value"].strip() if item in witai["entities"] and len(witai["entities"][item]) > 0 else None
 
     def contains_start_word(self, question):
         return any(command in question for command in ["enable", "turn on", "connect", "start"])

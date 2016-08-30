@@ -15,22 +15,23 @@ class KodiController(BaseVoiceControllerModule):
 
     def action(self, intent, question):
         print "Doing some stuff with kodi"
+        action = self.get_witai_item(witai, "action")
+        search_query = self.get_witai_item(witai, "search_query")
 
-        if self.contains_start_word(question):
+        if self.contains_start_word(action):
             self.response.say("Starting up kodi")
             self.start_kodi()
-        elif self.contains_stop_word(question):
+        elif self.contains_stop_word(action):
             self.response.say("Exiting kodi")
             self.stop_kodi()
-        elif "search_query" in intent["entities"]:
-            name = intent["entities"]["search_query"][0]["value"]
+        elif search_query:
             episode = None
             season = None
             if "number" in intent["entities"]:
                 episode = intent["entities"]["number"][0]["value"]
                 if len(intent["entities"]["number"]) > 1:
                     season = intent["entities"]["number"][1]["value"]
-            self.play_video(name, season, episode)
+            self.play_video(search_query, season, episode)
 
         elif "find album" in question:
             self.find_album(question)

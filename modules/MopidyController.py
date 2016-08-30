@@ -8,52 +8,52 @@ import random
 # See - https://github.com/hey-athena/hey-athena-client/blob/demo-branch/athena/tts.py for an example of pyglet
 
 class MopidyController(BaseVoiceControllerModule):
-    SERVER = "http://dave/mopidy/rpc"
+    SERVER = "http://localhost:6680/rpc"
 
-    def should_action(self, keyword, question):
-        return "music" in question or "tune" in question or "play me" in question
+    def should_action(self, witai, question):
+        return self.get_intent(witai) in ["music", "tune", "play me"]
 
-    def action(self, keyword, question):
+    def action(self, witai, question):
         print "Doing some stuff with mopidy"
+        action = self.get_witai_item(witai, "action")
+        search_query = self.get_witai_item(witai, "search_query")
 
         if "ash" in question:
             self.response.say("Playing Ash's Playlist")
             self.play_playlist(name="Ash")
-        elif "playlist" in question:
+        elif "playlist" in action:
             self.response.say("Playing Playlist")
             #Should handle: 'play me the ashley playlist' and 'music playlist bob'
-            searchFor = filter(None, filter(None, question.replace("music ", "").split("playlist"))[0].split("play me"))[0].split("play")[0].replace("the", "").strip()
-            self.play_playlist(name=searchFor)
+            self.play_playlist(name=search_query)
         elif "some" in question and not "some music" in question:
             self.response.say("Playing Genre")
             searchFor = filter(None, question.replace(" music", "").split("play me some"))[0].strip()
             self.search_by_genre(searchFor)
-        elif " by " in question:
+        elif "artist" in action:
             self.response.say("Searching for artist")
-            searchFor = question.split(" by ")[1].strip()
-            self.search_by_artist(searchFor)
-        elif "search" in question:
+            self.search_by_artist(search_query)
+        elif "search" in action:
             self.response.say("Searching")
-            searchFor = filter(None, question.split("music search"))[0].replace("for ", "").strip()
-            self.search(searchFor)
-        elif "pause" in question:
+            self.search(search_query)
+        elif "pause" in action:
             self.pause_music()
-        elif "resume" in question:
+        elif "resume" in action:
             self.resume_music()
-        elif "next" in question:
+        elif "next" in action:
             self.next_track()
-        elif "previous" in question:
+        elif "previous" in action:
             self.previous_track()
-        elif "down" in question:
-            self.response.say("Turning it down")
-            self.turn_down()
-        elif "up" in question:
-            self.response.say("Turning it up")
-            self.turn_up()
-        elif "play" in question:
+        elif "volume" in action:
+            if "down" in question:
+                self.response.say("Turning it down")
+                self.turn_down()
+            elif "up" in question:
+                self.response.say("Turning it up")
+                self.turn_up()
+        elif "play" in action:
             self.response.say("Loading some music")
             self.play_random_playlist()
-        elif "stop" in question:
+        elif "stop" in action:
             self.stop_music()
         else:
             self.response.say("Sorry I didn't understand that")
