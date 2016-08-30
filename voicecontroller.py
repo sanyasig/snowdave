@@ -175,6 +175,10 @@ class VoiceController:
                 logging.error("There was a problem whilst processing your question")
                 logging.error(traceback.print_stack())
                 self.response_library.say("There was a problem whilst processing your question")
+            except sr.RequestError, e: # Normally from a bad gateway exception
+                logging.error("There was a problem whilst processing your question")
+                logging.error(traceback.print_stack())
+                self.response_library.say("There was a problem whilst processing your question")
         self.create_detector()
         self.FINISHED_PROCESSING_JOB = True
 
