@@ -13,7 +13,7 @@ class KodiController(BaseVoiceControllerModule):
         return self.is_my_intent(witai, "kodi")
         #return "kodi" in question or "xbmc" in question
 
-    def action(self, intent, question):
+    def action(self, witai, question, audio):
         print "Doing some stuff with kodi"
         action = self.get_witai_item(witai, "action")
         search_query = self.get_witai_item(witai, "search_query")

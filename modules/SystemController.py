@@ -20,11 +20,11 @@ class SystemController(BaseVoiceControllerModule):
                 call(["/home/pi/startPulse.sh"])
                 #call(["sudo", "service", "mopidy", "restart"])
 
-    def should_action(self, keyword, question):
+    def should_action(self, witai, question):
         return "bluetooth" in question or "mopidy" in question or "pulseaudio" in question or "speaker" in question or "pc" in question or "emulation" in question
         #return "enable" in question or "disable" in question or "turn on" in question or "turn off" in question or "connect" in question or "restart" in question
 
-    def action(self, keyword, question):
+    def action(self, witai, question, audio):
         intent = self.get_witai_item(witai, "intent")
         action = self.get_witai_item(witai, "action")
         search_query = self.get_witai_item(witai, "search_query")

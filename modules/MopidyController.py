@@ -11,9 +11,9 @@ class MopidyController(BaseVoiceControllerModule):
     SERVER = "http://localhost:6680/rpc"
 
     def should_action(self, witai, question):
-        return self.get_intent(witai) in ["music", "tune", "play me"]
+        return self.get_witai_item(witai, "intent") in ["music", "tune", "play me"]
 
-    def action(self, witai, question):
+    def action(self, witai, question, audio):
         print "Doing some stuff with mopidy"
         action = self.get_witai_item(witai, "action")
         search_query = self.get_witai_item(witai, "search_query")
