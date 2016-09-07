@@ -39,7 +39,7 @@ class SystemController(BaseVoiceControllerModule):
         elif "speaker" in intent:
             chosenSpeaker = self.config["speakers"]["default"]
             for option in self.config["speakers"]:
-                if option in search_query:
+                if (search_query and option in search_query) or (not search_query and option in question):
                     chosenSpeaker = self.config["speakers"][option]
                     break
             self.change_speaker(chosenSpeaker)
