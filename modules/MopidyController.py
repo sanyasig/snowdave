@@ -8,10 +8,10 @@ import random
 # See - https://github.com/hey-athena/hey-athena-client/blob/demo-branch/athena/tts.py for an example of pyglet
 
 class MopidyController(BaseVoiceControllerModule):
-    SERVER = "http://localhost:6680/rpc"
+    SERVER = "http://localhost:6680/mopidy/rpc"
 
     def should_action(self, witai, question):
-        return self.get_witai_item(witai, "intent") in ["music", "tune", "play me"]
+        return self.get_witai_item(witai, "intent") in ["music", "tune", "play me", "mopidy"]
 
     def action(self, witai, question, audio):
         print "Doing some stuff with mopidy"

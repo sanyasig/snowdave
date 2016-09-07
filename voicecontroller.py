@@ -25,6 +25,8 @@ class VoiceController:
     def __init__(self):
         with open('config.json') as data_file:    
             config = json.load(data_file)
+
+        logging.basicConfig(filename='_voicecontroller.log', level=logging.DEBUG, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
         
         self.create_detector()
         self.response_library = ResponseLibrary()
@@ -119,6 +121,8 @@ class VoiceController:
 
                 logging.info("Google thinks you said: " + question)
                 print("Q: " + question)
+                logging.info(witResponse)
+                print(witResponse)
                 self.process_job(question, witResponse, audio)
             except sr.UnknownValueError, e:
                 logging.error("There was a problem whilst processing your question")
@@ -139,7 +143,8 @@ class VoiceController:
                 self.response_library.ding(True)
                 try: module.action(witResponse, question, audio)
                 except Exception, e:
-                    logging.error(traceback.print_stack())
+                    logging.error(e)
+                    logging.error(traceback.format_exc())
                     self.response_library.say("Something went wrong! %s" % str(e).split("\n")[0])
                 # Potentially don't break here, depends if multiple modules should action something or not?
                 has_response = True
@@ -151,6 +156,7 @@ class VoiceController:
                     self.response_library.ding(True)
                     try: module.action(witResponse, question, audio)
                     except Exception, e:
+                        logging.error(e)
                         logging.error(traceback.print_stack())
                         self.response_library.say("Something went wrong! %s" % str(e).split("\n")[0])
 

@@ -59,4 +59,4 @@ class ResponseLibrary:
         subprocess.Popen(['mpg123', '-o', 'pulse', '-q', fname]).wait()
 
     def play_sound(self, fname):
-        subprocess.Popen(['omxplayer', '-o', 'local', fname]).wait()
+        subprocess.Popen(['omxplayer', '-o', 'local', fname], stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE).wait()
