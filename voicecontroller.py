@@ -21,25 +21,30 @@ class VoiceController:
     SENSITIVITY = 0.5
     INTERRUPTED = False
     FINISHED_PROCESSING_JOB = True
+    CONSOLE_MODE = False
     
-    def __init__(self):
+    def __init__(self, consoleMode):
         with open('config.json') as data_file:    
             config = json.load(data_file)
 
         logging.basicConfig(filename='_voicecontroller.log', level=logging.DEBUG, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
+        self.CONSOLE_MODE = consoleMode
         
-        self.create_detector()
         self.response_library = ResponseLibrary()
         self.witClient = Wit(access_token=config["main"]["WIT_API_KEY"])
-
         self.recignisor = sr.Recognizer()
-        #Tweak everything to make it fast :D
-        self.recignisor.non_speaking_duration = 0.4
-        self.recignisor.pause_threshold = 0.5
-        self.recignisor.energy_threshold = 2500
-        self.recignisor.dynamic_energy_threshold = True
 
-        self.adjust_for_ambient(2)
+        if not self.CONSOLE_MODE:
+            self.create_detector()
+
+            #Tweak everything to make it fast :D
+            self.recignisor.non_speaking_duration = 0.4
+            self.recignisor.pause_threshold = 0.5
+            self.recignisor.energy_threshold = 2500
+            self.recignisor.dynamic_energy_threshold = True
+
+            self.adjust_for_ambient(2)
 
         self.modules = []
         for module in modules.__all__:
@@ -51,9 +56,9 @@ class VoiceController:
             self.modules.append(moduleInstance)
 
     def adjust_for_ambient(self, time=0.5):
-        #return #Temp disabled
-        with self.get_microphone() as source:
-            self.recignisor.adjust_for_ambient_noise(source, time)
+        if not self.CONSOLE_MODE:
+            with self.get_microphone() as source:
+                self.recignisor.adjust_for_ambient_noise(source, time)
 
     def get_microphone(self):
         #Force using PS3 Eye camera mic
@@ -76,12 +81,16 @@ class VoiceController:
         self.INTERRUPTED = True
 
     def interrupt_callback(self):
+        if not self.FINISHED_PROCESSING_JOB:
+            self.adjust_for_ambient()
         return self.INTERRUPTED or self.FINISHED_PROCESSING_JOB
 
     def main(self):
-        if os.name == "nt":
+        if os.name == "nt" or self.CONSOLE_MODE:
             while not self.INTERRUPTED:
-                self.process_job(raw_input("Question: "))
+                with sr.AudioFile("what-is-the-time.wav") as audioFile:
+                    audio = self.recignisor.listen(audioFile)
+                    self.process_job(raw_input("Question: "), audio)
             return
 
         # capture SIGINT signal, e.g., Ctrl+C
@@ -112,7 +121,6 @@ class VoiceController:
                 logging.info("Sending voice to Google")
 
                 question = self.recignisor.recognize_google(audio).lower()
-                witResponse = self.witClient.message(question) #run_actions(session_id, question)
 
                 #This was much slower
                 #witResponse = r.recognize_wit(audio, WIT_API_KEY, show_all=True)
@@ -123,7 +131,7 @@ class VoiceController:
                 print("Q: " + question)
                 logging.info(witResponse)
                 print(witResponse)
-                self.process_job(question, witResponse, audio)
+                self.process_job(question, audio)
             except sr.UnknownValueError, e:
                 logging.error("There was a problem whilst processing your question")
                 logging.error(traceback.print_stack())
@@ -136,7 +144,15 @@ class VoiceController:
         self.FINISHED_PROCESSING_JOB = True
 
 
-    def process_job(self, question, witResponse=None, audio=None):
+    def process_job(self, question, audio=None):
+        if question.strip() == "":
+            self.response_library.say("No question was provided")
+            return
+        try: witResponse = self.witClient.message(question) #run_actions(session_id, question)
+        except Exception, e:
+            logging.error("There was a problem whilst processing your question with Wit.AI")
+            logging.error(traceback.print_stack())
+            self.response_library.say("There was a problem whilst processing your question with Wit.AI")
         has_response = False
         for module in self.modules:
             if module.should_action(witResponse, question):
@@ -168,6 +184,6 @@ class VoiceController:
 
 if __name__ == "__main__":
     import setup_logging
-    vc = VoiceController()
+    vc = VoiceController("console" in sys.argv)
     vc.main()
     #vc.process_job("play me some music")

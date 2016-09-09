@@ -7,6 +7,7 @@ if [ $? -ne 0 ]; then
 	echo Starting Xvfb
 	Xvfb :1 -screen 0 1x1x8 &
 	sleep 10
+        pkill -f pulseaudio
 fi
 
 ps -ef | grep dbus-launch | grep -v grep > /dev/null

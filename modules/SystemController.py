@@ -115,4 +115,5 @@ class SystemController(BaseVoiceControllerModule):
 
     def shutdown_windows_on_lan(self, host, user):
         #call(["net", "rpc", "shutdown", "-I", host, "-U", user+"%"+windows_password])
-        call(["ssh", "-l", user, host, "shutdown", "/h"])
+        #This doesn't seem to return, so don't wait :P
+        Popen(["ssh", "-l", user, host, "shutdown", "/h"])

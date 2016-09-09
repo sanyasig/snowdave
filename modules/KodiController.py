@@ -45,6 +45,13 @@ class KodiController(BaseVoiceControllerModule):
     def stop_kodi(self):
         self.xbmc.Application.Quit()
 
+    def turn_on_tv(self):
+        #https://github.com/joshjowen/script.json-cec
+        subprocess.Popen(["echo", "on", "0", "|", "cec-client", "-s"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE)
+
+    def turn_off_tv(self):
+        subprocess.Popen(["echo", "standby", "0", "|", "cec-client", "-s"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE)
+
     def find_album(self, query):
         albums = self.xbmc.AudioLibrary.GetAlbums({"filter": { "artist": question[question.index(" by ") + 4:]}})
         if len(albums["result"]) > 0 and len(albums["result"]["albums"]) > 0:
