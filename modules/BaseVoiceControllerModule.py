@@ -20,7 +20,7 @@ class BaseVoiceControllerModule:
         return self.get_witai_item(witai, "action") == action
 
     def get_witai_item(self, witai, item):
-        return witai["entities"][item][0]["value"].strip() if item in witai["entities"] and len(witai["entities"][item]) > 0 else None
+        return witai["entities"][item][0]["value"].strip() if witai and item in witai["entities"] and len(witai["entities"][item]) > 0 else None
 
     def contains_start_word(self, question):
         return any(command in question for command in ["enable", "turn on", "connect", "start"])

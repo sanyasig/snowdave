@@ -30,6 +30,8 @@ class VoiceController:
         logging.basicConfig(filename='_voicecontroller.log', level=logging.DEBUG, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
         self.CONSOLE_MODE = consoleMode
+        if self.CONSOLE_MODE:
+            print "Running in console mode!"
         
         self.response_library = ResponseLibrary()
         self.witClient = Wit(access_token=config["main"]["WIT_API_KEY"])
@@ -58,7 +60,9 @@ class VoiceController:
     def adjust_for_ambient(self, time=0.5):
         if not self.CONSOLE_MODE:
             with self.get_microphone() as source:
+                #print "Adjusting for ambient"
                 self.recignisor.adjust_for_ambient_noise(source, time)
+                #print "Adjusted"
 
     def get_microphone(self):
         #Force using PS3 Eye camera mic
@@ -129,8 +133,6 @@ class VoiceController:
 
                 logging.info("Google thinks you said: " + question)
                 print("Q: " + question)
-                logging.info(witResponse)
-                print(witResponse)
                 self.process_job(question, audio)
             except sr.UnknownValueError, e:
                 logging.error("There was a problem whilst processing your question")
@@ -148,7 +150,11 @@ class VoiceController:
         if question.strip() == "":
             self.response_library.say("No question was provided")
             return
-        try: witResponse = self.witClient.message(question) #run_actions(session_id, question)
+        witResponse = None
+        try:
+            witResponse = self.witClient.message(question) #run_actions(session_id, question)
+            logging.info(witResponse)
+            print(witResponse)
         except Exception, e:
             logging.error("There was a problem whilst processing your question with Wit.AI")
             logging.error(traceback.print_stack())
