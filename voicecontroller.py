@@ -22,6 +22,7 @@ class VoiceController:
     INTERRUPTED = False
     FINISHED_PROCESSING_JOB = True
     CONSOLE_MODE = False
+    ALEXA_MODE = False
     
     def __init__(self, consoleMode):
         with open('config.json') as data_file:    
@@ -32,6 +33,9 @@ class VoiceController:
         self.CONSOLE_MODE = consoleMode
         if self.CONSOLE_MODE:
             print "Running in console mode!"
+
+        if "alexa" in sys.argv:
+            self.ALEXA_MODE = True
         
         self.response_library = ResponseLibrary()
         self.witClient = Wit(access_token=config["main"]["WIT_API_KEY"])
@@ -123,16 +127,18 @@ class VoiceController:
         if audio:
             try:
                 logging.info("Sending voice to Google")
+                question = ""
 
-                question = self.recignisor.recognize_google(audio).lower()
+                if not self.ALEXA_MODE:
+                    question = self.recignisor.recognize_google(audio).lower()
+                    #This was much slower
+                    #witResponse = r.recognize_wit(audio, WIT_API_KEY, show_all=True)
+                    #question = witResponse["_text"].lower()
+                    #witResponse = witResponse["outcomes"][0]
 
-                #This was much slower
-                #witResponse = r.recognize_wit(audio, WIT_API_KEY, show_all=True)
-                #question = witResponse["_text"].lower()
-                #witResponse = witResponse["outcomes"][0]
+                    logging.info("Google thinks you said: " + question)
+                    print("Q: " + question)
 
-                logging.info("Google thinks you said: " + question)
-                print("Q: " + question)
                 self.process_job(question, audio)
             except sr.UnknownValueError, e:
                 logging.error("There was a problem whilst processing your question")
@@ -147,30 +153,33 @@ class VoiceController:
 
 
     def process_job(self, question, audio=None):
-        if question.strip() == "":
-            self.response_library.say("No question was provided")
-            return
-        witResponse = None
-        try:
-            witResponse = self.witClient.message(question) #run_actions(session_id, question)
-            logging.info(witResponse)
-            print(witResponse)
-        except Exception, e:
-            logging.error("There was a problem whilst processing your question with Wit.AI")
-            logging.error(traceback.print_stack())
-            self.response_library.say("There was a problem whilst processing your question with Wit.AI")
         has_response = False
-        for module in self.modules:
-            if module.should_action(witResponse, question):
-                self.response_library.ding(True)
-                try: module.action(witResponse, question, audio)
-                except Exception, e:
-                    logging.error(e)
-                    logging.error(traceback.format_exc())
-                    self.response_library.say("Something went wrong! %s" % str(e).split("\n")[0])
-                # Potentially don't break here, depends if multiple modules should action something or not?
-                has_response = True
-                break
+        witResponse = None
+
+        if not self.ALEXA_MODE:
+            if question.strip() == "":
+                self.response_library.say("No question was provided")
+                return
+            try:
+                witResponse = self.witClient.message(question) #run_actions(session_id, question)
+                logging.info(witResponse)
+                print(witResponse)
+            except Exception, e:
+                logging.error("There was a problem whilst processing your question with Wit.AI")
+                logging.error(traceback.print_stack())
+                self.response_library.say("There was a problem whilst processing your question with Wit.AI")
+
+            for module in self.modules:
+                if module.should_action(witResponse, question):
+                    self.response_library.ding(True)
+                    try: module.action(witResponse, question, audio)
+                    except Exception, e:
+                        logging.error(e)
+                        logging.error(traceback.format_exc())
+                        self.response_library.say("Something went wrong! %s" % str(e).split("\n")[0])
+                    # Potentially don't break here, depends if multiple modules should action something or not?
+                    has_response = True
+                    break
 
         if not has_response:
             for module in self.modules:

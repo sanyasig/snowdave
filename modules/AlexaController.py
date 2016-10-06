@@ -39,7 +39,7 @@ class AlexaController(BaseVoiceControllerModule):
             },
             "messageBody": {
                 "profile": "alexa-close-talk",
-                "locale": "en-us",
+                "locale": "en-uk",
                 "format": "audio/L16; rate=16000; channels=1"
             }
         }

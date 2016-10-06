@@ -13,7 +13,7 @@ class SystemController(BaseVoiceControllerModule):
             (output, err) = process.communicate()
             exit_code = process.wait()
             #if not "bluez_sink.00_15_83_6B_63_41" in output:
-            if not "jongo" in output:
+            if False and not "jongo" in output:
                 print("Couldn't find jongo in pulse audio's sink selection, will fire up pulse audio and then restart mopidy")
                 print output
                 #call(["/home/pi/connectBluetoothAudio.sh"])
